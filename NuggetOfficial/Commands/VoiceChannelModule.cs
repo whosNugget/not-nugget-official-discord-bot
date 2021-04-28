@@ -117,9 +117,7 @@ namespace NuggetOfficial.Commands
 			//otherwise error early
 
 			//create the vc if this point was reached
-			string error = string.Empty;
-
-			if (!ValidateVCParameterInput(out error, publicity, maxUsers, bitrate, region, permittedMembers)) //ensure the provided parameters arent shite
+			if (!ValidateVCParameterInput(out string error, publicity, maxUsers, bitrate, region, permittedMembers)) //ensure the provided parameters arent shite
 			{
 				await RespondAsync(ctx.Message, error);
 				return;
@@ -139,7 +137,12 @@ namespace NuggetOfficial.Commands
 			}
 
 			List<DiscordOverwriteBuilder> channelPermissionsBuilderList = GeneratePermissionOverwrites(ctx.Member, publicity, permittedMembers);
-			await CreateChannelAndMoveMemberAsync(ctx.Member, maxUsers, bitrate, region, channelPermissionsBuilderList);
+			DiscordChannel createdChannel = await CreateChannelAndMoveMemberAsync(ctx.Member, maxUsers, bitrate, region, channelPermissionsBuilderList);
+
+			if(!(permittedMembers is null) && permittedMembers.Length > 0)
+			{
+				await InformPermittedMembersDirectly(ctx.Member, createdChannel, permittedMembers);
+			}
 
 			//if (!(ctx.Member.VoiceState is null) && !(ctx.Member.VoiceState.Channel is null) && ctx.Member.VoiceState.Channel.Equals(waitingRoomVC))
 			//{
@@ -240,7 +243,7 @@ namespace NuggetOfficial.Commands
 				createdChannel = await registeredGuild.CreateVoiceChannelAsync(channelCreator.Nickname ?? $"{channelCreator.DisplayName}'s VC", parentCategory, bitrate, maxUsers, permissions, $"Channel created via command by member {channelCreator.DisplayName}#{channelCreator.Discriminator}:{channelCreator.Id}");
 
 				if (createdChannels.ContainsKey(channelCreator)) (createdChannels[channelCreator] ?? new List<DiscordChannel>()).Add(createdChannel);
-				else createdChannels.Add(channelCreator, new List<DiscordChannel>(new []{ createdChannel }));
+				else createdChannels.Add(channelCreator, new List<DiscordChannel>(new[] { createdChannel }));
 			}
 			catch (Exception)
 			{
@@ -252,7 +255,23 @@ namespace NuggetOfficial.Commands
 
 			return createdChannel;
 		}
+
+		async Task InformPermittedMembersDirectly(DiscordMember channelCreator, DiscordChannel createdVoiceChannel, IEnumerable<DiscordMember> permittedAndAuthorizedMembers)
+		{
+			DiscordInvite newInvite = await createdVoiceChannel.CreateInviteAsync();
+			foreach (DiscordMember member in permittedAndAuthorizedMembers)
+			{
+				DiscordDmChannel currentMemberDm = null;
+				try { currentMemberDm = await member.CreateDmChannelAsync(); }
+				catch (Exception) { continue; }
+
+				if (currentMemberDm is null) continue;
+
+				await currentMemberDm.SendMessageAsync($"You were whitelisted to join a VC by {channelCreator.Nickname ?? channelCreator.DisplayName} in {createdVoiceChannel.Guild.Name}. Click this link to immediately join the channel: {newInvite}");
+			}
+		}
 		#endregion
+
 		#region Synchronous Private Methods
 		bool ValidateVCParameterInput(out string error, ChannelPublicity publicity, int? maxUsers, int? bitrate, VoiceRegion region, params DiscordMember[] permittedMembers)
 		{
@@ -297,7 +316,7 @@ namespace NuggetOfficial.Commands
 			{
 				//TODO this might be redundant...need to test if the muted role overwrite will disallow the muted role from joining even if this allows them...though i think i know the behavior that the role system will produce
 				//TODO may need to accomodate other blacklist roles
-				if (member.Roles.Contains(mutedRole)) continue; //TODO we want to inform the creator this memvber was not whitelisted in the vc because they have the muted role
+				if (member.Roles.Contains(mutedRole)) continue; //TODO we want to inform the creator this member was not whitelisted in the vc because they have the muted role
 				channelPermissionsBuilderList.Add(new DiscordOverwriteBuilder().For(member).Allow(Permissions.AccessChannels | Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection | Permissions.Stream));
 			}
 
@@ -319,7 +338,7 @@ namespace NuggetOfficial.Commands
 					highestRolePosition = role.Position;
 				}
 			}
-			
+
 			if (rolewisePermissions.ContainsKey(highestRole))
 			{
 				highestPrecedencePermissions = rolewisePermissions[highestRole];
