@@ -15,14 +15,9 @@ using System.Linq;
 
 namespace NuggetOfficial
 {
-	class Program
+	class Bot
 	{
-		static void Main(string[] args)
-		{
-			MainAsync().GetAwaiter().GetResult();
-		}
-
-		static async Task MainAsync()
+		static async Task Main()
 		{
 			DiscordClient discord = new DiscordClient(new DiscordConfiguration()
 			{
