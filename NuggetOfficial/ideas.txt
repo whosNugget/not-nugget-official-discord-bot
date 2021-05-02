@@ -1,0 +1,9 @@
+﻿
+Sharding and Data Storage
+	If the bot is ever to be publicied (unlikely) it will need to be sharded but it also needs to have a more dynamic way of storing data
+
+Launcher/GUI
+	It would be a very fun experiement/challenge to "wrap" the bot in a GUI or launcher where you can enable/disable modules and set the bot settings, while also dynamically enabling and disabling the bot
+	The GUI should inform the user if the bot is running and what settings it is using
+	The bot should remain active (maybe through a service) even when the launcher/GUI is exited
+	Perhaps look into some system tray features OR system services to get this running in the background
