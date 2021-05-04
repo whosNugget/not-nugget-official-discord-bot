@@ -12,6 +12,7 @@ using NuggetOfficial.Data.Converters;
 using Microsoft.Extensions.DependencyInjection;
 using DSharpPlus.Entities;
 using System.Linq;
+using NuggetOfficial.Data.VoiceModule;
 
 namespace NuggetOfficial
 {
@@ -26,7 +27,7 @@ namespace NuggetOfficial
 				Intents = DiscordIntents.All
 			});
 
-			IServiceCollection services = new ServiceCollection().AddSingleton<Random>();
+			IServiceCollection services = new ServiceCollection().AddSingleton<VoiceRegisteredGuildData>();
 			if (ConfigurationManager.AppSettings.AllKeys.Contains("registeredGuild"))
 			{
 				services.AddSingleton(await discord.GetGuildAsync(ulong.Parse(ConfigurationManager.AppSettings.Get("registeredGuild"))));
@@ -43,6 +44,7 @@ namespace NuggetOfficial
 			//discord.GuildMemberRemoved += MemberValidation.TrackMemberLeaveGuild;
 
 			//commands.RegisterCommands<ModerationModule>();
+			//commands.RegisterCommands<MusicModule>();
 			commands.RegisterCommands<VoiceChannelModule>();
 			commands.RegisterConverter(new ServerRegionConverter());
 			commands.RegisterConverter(new ChannelPublicityConverter());

@@ -128,7 +128,7 @@ namespace NuggetOfficial.Authority
 		readonly int specificChannelCreationQuantity;
 
 		/// <summary>
-		/// Create a default authorization scheme where the represented member or role is not authorized to do anything
+		/// Create a default authorization scheme where the represented member or role is completely unauthorized
 		/// </summary>
 		public VoiceChannelPermissions()
 		{
@@ -192,6 +192,7 @@ namespace NuggetOfficial.Authority
 			if (channelRegionConfigurationAuthority != ChannelRegionConfigurationAuthority.Authorized && requestedRegion != VoiceRegion.Automatic)
 			{
 				error = "Member does not have the authority to change the voice channel's region";
+				goto RequestedParametersInvalid;
 			}
 
 			switch (requestedPublicity)
@@ -230,7 +231,7 @@ namespace NuggetOfficial.Authority
 			}
 
 		RequestedParametersInvalid:
-			return error != string.Empty;
+			return error == string.Empty;
 		}
 	}
 }
