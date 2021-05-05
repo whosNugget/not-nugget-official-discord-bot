@@ -56,25 +56,28 @@ namespace NuggetOfficial.Commands
 		}
 
 		[Command("registerguild")]
-		public async Task RegisterGuild(CommandContext ctx, DiscordChannel parentCategory, DiscordChannel waitingRoomVC, DiscordChannel commandListenChannel, DiscordRole memberRole, DiscordRole mutedRole)
+		public async Task RegisterGuild(CommandContext ctx, DiscordChannel parentCategory, DiscordChannel waitingRoomVC, DiscordChannel commandListenChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole)
 		{
-			if (!registeredGuildData.RegisterGuild(ctx.Guild, parentCategory, waitingRoomVC, commandListenChannel, memberRole, mutedRole, out string error))
+			if (!registeredGuildData.RegisterGuild(ctx.Guild, parentCategory, waitingRoomVC, commandListenChannel, memberRole, mutedRole, botManagerRole, out string error))
 			{
 				await ctx.Message.RespondAsync(error);
 				goto Completed;
 			}
 
+			registeredGuildData[ctx.Guild].InitializePermissions(VoiceChannelPermissions.Unauthorized, new[] { new KeyValuePair<DiscordRole, VoiceChannelPermissions>(memberRole, new VoiceChannelPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Unauthorized, ChannelCreationQuantityAuthority.Single, ChannelAccesibilityConfigurationAuthority.Private, ChannelRegionConfigurationAuthority.Unauthorized)), new KeyValuePair<DiscordRole, VoiceChannelPermissions>(mutedRole, VoiceChannelPermissions.Unauthorized), new KeyValuePair<DiscordRole, VoiceChannelPermissions>(botManagerRole, VoiceChannelPermissions.Authorized) }, new[] { new KeyValuePair<DiscordMember, VoiceChannelPermissions>(ctx.Member, VoiceChannelPermissions.Authorized) });
+
 			//TODO test
 			await ctx.Message.RespondAsync(
 				new DiscordEmbedBuilder()
 				.WithTitle("Registering server")
-				.WithThumbnail(ctx.Guild.GetWidgetImage())
+				.WithThumbnail(ctx.Guild.IconUrl)
 				.AddField("Guild", $"{ctx.Guild.Name} - {ctx.Guild.Id}")
 				.AddField("Parent Category", $"{parentCategory?.Name ?? "null"} - {parentCategory?.Id}")
 				.AddField("Waiting Room VC", $"{waitingRoomVC?.Name ?? "null"} - {waitingRoomVC?.Id}")
 				.AddField("Command Listen Channel", $"{commandListenChannel?.Name ?? "null"} - {waitingRoomVC?.Id}")
-				.AddField("Member Role", $"{memberRole} - {memberRole?.Id}")
-				.AddField("Muted Role", $"{mutedRole} - {mutedRole.Id}")
+				.AddField("Member Role", $"{memberRole.Name} - {memberRole?.Id}")
+				.AddField("Muted Role", $"{mutedRole.Name} - {mutedRole.Id}")
+				.AddField("Bot Manager Role", $"{botManagerRole.Name} - {botManagerRole.Id}")
 				.WithColor(DiscordColor.IndianRed)
 				.Build());
 
@@ -86,6 +89,14 @@ namespace NuggetOfficial.Commands
 		public async Task Permit(CommandContext ctx, DiscordRole role) //TODO more complex/more options
 		{
 			//TODO allow server owners to specify moderator roles/members that can utilize these commands
+			if (ValidateServerRegistered(ctx))
+			{
+				if (ctx.Member.PermissionsIn(ctx.Channel).HasFlag(Permissions.ManageChannels) || ctx.Member.Roles.Contains(registeredGuildData[ctx.Guild].BotManagerRole))
+				{
+					await Task.Run(() => registeredGuildData[ctx.Guild].UpdatePermissions(null, new[] { new KeyValuePair<DiscordRole, VoiceChannelPermissions>(role, new VoiceChannelPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Authorized, ChannelCreationQuantityAuthority.Single, ChannelAccesibilityConfigurationAuthority.Private, ChannelRegionConfigurationAuthority.Authorized)) }, null));
+				}
+			}
+
 			//if (ctx.Member.PermissionsIn(ctx.Channel).HasFlag(Permissions.ManageChannels))
 			//{
 			//	if (!(role is null) && !rolewisePermissions.ContainsKey(role))
@@ -101,7 +112,15 @@ namespace NuggetOfficial.Commands
 		[Command("permit")]
 		public async Task Permit(CommandContext ctx, DiscordMember member) //TODO more complex/more options
 		{
-			////TODO allow server owners to specify moderator roles/members that can utilize these commands
+			//TODO allow server owners to specify moderator roles/members that can utilize these commands
+			if (ValidateServerRegistered(ctx))
+			{
+				if (ctx.Member.PermissionsIn(ctx.Channel).HasFlag(Permissions.ManageChannels) || ctx.Member.Roles.Contains(registeredGuildData[ctx.Guild].BotManagerRole))
+				{
+					await Task.Run(() => registeredGuildData[ctx.Guild].UpdatePermissions(null, null, new[] { new KeyValuePair<DiscordMember, VoiceChannelPermissions>(member, new VoiceChannelPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Authorized, ChannelCreationQuantityAuthority.Single, ChannelAccesibilityConfigurationAuthority.Private, ChannelRegionConfigurationAuthority.Authorized)) }));
+				}
+			}
+
 			//if (ctx.Member.PermissionsIn(ctx.Channel).HasFlag(Permissions.ManageChannels))
 			//{
 			//	if (!(member is null) && !memberwisePermissions.ContainsKey(member))
@@ -118,7 +137,7 @@ namespace NuggetOfficial.Commands
 		[Command("createvc")]
 		public async Task CreateVC(CommandContext ctx, ChannelPublicity publicity = ChannelPublicity.Public, int? maxUsers = 0, int? bitrate = 64000, VoiceRegion region = VoiceRegion.Automatic, params DiscordMember[] permittedMembers)
 		{
-			if (ValidateServerRegistered(ctx))
+			if (ValidateServerRegistered(ctx) && ValidateCommandChannel(ctx))
 			{
 				if (!ValidateVCParameterInput(ctx.Guild, out string error, publicity, maxUsers, bitrate, region, permittedMembers)) //ensure the provided parameters arent shite
 				{
@@ -143,7 +162,7 @@ namespace NuggetOfficial.Commands
 
 				if (!(permittedMembers is null) && permittedMembers.Length > 0)
 				{
-					await InformPermittedMembersDirectly(ctx.Member, createdChannel, permittedMembers);
+					await AttemptInformPermittedMembersDirectly(ctx.Member, createdChannel, permittedMembers);
 				}
 			}
 
@@ -167,7 +186,7 @@ namespace NuggetOfficial.Commands
 		{
 			if (ValidateServerRegistered(ctx))
 			{
-				if (!(registeredGuildData[ctx.Guild]?[ctx.Member] is null) ||  registeredGuildData[ctx.Guild][ctx.Member].Count == 0)
+				if (!(registeredGuildData[ctx.Guild]?[ctx.Member] is null) || registeredGuildData[ctx.Guild][ctx.Member].Count == 0)
 				{
 					await RespondAsync(ctx.Message, "``You need to create a VC to delete one``");
 					return;
@@ -211,8 +230,7 @@ namespace NuggetOfficial.Commands
 			try
 			{
 				createdChannel = await guild.CreateVoiceChannelAsync(channelCreator.Nickname ?? $"{channelCreator.DisplayName}'s VC", registeredGuildData[guild].ParentCategory, bitrate, maxUsers, permissions, $"Channel created via command by member {channelCreator.DisplayName}#{channelCreator.Discriminator}:{channelCreator.Id}");
-
-				registeredGuildData[guild].CreateChannel(channelCreator, createdChannel);
+				registeredGuildData[guild].AddChannel(channelCreator, createdChannel); //Add the channel to the registerred guild's data container
 			}
 			catch (Exception)
 			{
@@ -225,12 +243,12 @@ namespace NuggetOfficial.Commands
 			return createdChannel;
 		}
 
-		async Task InformPermittedMembersDirectly(DiscordMember channelCreator, DiscordChannel createdVoiceChannel, IEnumerable<DiscordMember> permittedAndAuthorizedMembers)
+		async Task AttemptInformPermittedMembersDirectly(DiscordMember channelCreator, DiscordChannel createdVoiceChannel, IEnumerable<DiscordMember> permittedAndAuthorizedMembers)
 		{
 			DiscordInvite newInvite = await createdVoiceChannel.CreateInviteAsync();
 			foreach (DiscordMember member in permittedAndAuthorizedMembers)
 			{
-				DiscordDmChannel currentMemberDm = null;
+				DiscordDmChannel currentMemberDm;
 				try { currentMemberDm = await member.CreateDmChannelAsync(); }
 				catch (Exception) { continue; }
 
@@ -245,6 +263,11 @@ namespace NuggetOfficial.Commands
 		bool ValidateServerRegistered(CommandContext ctx)
 		{
 			return !(registeredGuildData[ctx.Guild] is null);
+		}
+
+		bool ValidateCommandChannel(CommandContext ctx)
+		{
+			return registeredGuildData[ctx.Guild].CommandListenChannel.Equals(ctx.Channel);
 		}
 
 		bool ValidateVCParameterInput(DiscordGuild guild, out string error, ChannelPublicity publicity, int? maxUsers, int? bitrate, VoiceRegion region, params DiscordMember[] permittedMembers)

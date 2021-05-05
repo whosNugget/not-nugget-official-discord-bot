@@ -120,6 +120,9 @@ namespace NuggetOfficial.Authority
 
 	public class VoiceChannelPermissions
 	{
+		public static VoiceChannelPermissions Authorized { get => new VoiceChannelPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Authorized, ChannelCreationQuantityAuthority.Unlimited, ChannelAccesibilityConfigurationAuthority.Authorized, ChannelRegionConfigurationAuthority.Authorized); }
+		public static VoiceChannelPermissions Unauthorized { get => new VoiceChannelPermissions(ChannelCreationAuthority.Unauthorized, ChannelRenameAuthority.Unauthorized, ChannelCreationQuantityAuthority.None, ChannelAccesibilityConfigurationAuthority.Unauthorized, ChannelRegionConfigurationAuthority.Unauthorized); }
+
 		readonly ChannelCreationAuthority channelCreationAuthority;
 		readonly ChannelRenameAuthority channelRenameAuthority;
 		readonly ChannelCreationQuantityAuthority channelCreationQuantityAuthority;
