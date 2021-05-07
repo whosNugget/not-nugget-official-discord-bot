@@ -22,6 +22,8 @@ namespace NuggetOfficial.Commands
 		//as the bot currently stores information for a single registerred guild, and it has no capability of holding information on multiple servers at the moment.
 		//When the time to convert this bot to a database instance, this class will need a massive refactor. It will be a fun development challenge, though :)
 
+		//TODO full conversion from responding with messages to responding with embeds required
+
 		enum MessageType
 		{
 			Error,
@@ -37,9 +39,14 @@ namespace NuggetOfficial.Commands
 			this.registeredGuildData = registeredGuildData;
 		}
 
+		public override async Task BeforeExecutionAsync(CommandContext ctx) => await ctx.TriggerTypingAsync();
+
 		[Command("registerguild")]
 		public async Task RegisterGuild(CommandContext ctx, DiscordChannel parentCategory, DiscordChannel waitingRoomVC, DiscordChannel commandListenChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole)
 		{
+			MessageType messageType = MessageType.Success;
+			List<KeyValuePair<string, string>> embedContent = new List<KeyValuePair<string, string>>();
+
 			if (!registeredGuildData.RegisterGuild(ctx.Guild, parentCategory, waitingRoomVC, commandListenChannel, memberRole, mutedRole, botManagerRole, out string error))
 			{
 				await ctx.Message.RespondAsync(error);
@@ -48,27 +55,27 @@ namespace NuggetOfficial.Commands
 
 			registeredGuildData[ctx.Guild].InitializePermissions(VoiceChannelCreationPermissions.Unauthorized, new[] { new KeyValuePair<DiscordRole, VoiceChannelCreationPermissions>(memberRole, new VoiceChannelCreationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Unauthorized, ChannelCreationQuantityAuthority.Single, ChannelAccesibilityConfigurationAuthority.Private, ChannelRegionConfigurationAuthority.Unauthorized)), new KeyValuePair<DiscordRole, VoiceChannelCreationPermissions>(mutedRole, VoiceChannelCreationPermissions.Unauthorized), new KeyValuePair<DiscordRole, VoiceChannelCreationPermissions>(botManagerRole, VoiceChannelCreationPermissions.Authorized) }, new[] { new KeyValuePair<DiscordMember, VoiceChannelCreationPermissions>(ctx.Member, VoiceChannelCreationPermissions.Authorized) });
 
-			//TODO test
-			await ctx.Message.RespondAsync(
-				new DiscordEmbedBuilder()
-				.WithTitle("Registering server")
-				.WithThumbnail(ctx.Guild.IconUrl)
-				.AddField("Guild", $"{ctx.Guild.Name} - {ctx.Guild.Id}")
-				.AddField("Parent Category", $"{parentCategory?.Name ?? "null"} - {parentCategory?.Id}")
-				.AddField("Waiting Room VC", $"{waitingRoomVC?.Name ?? "null"} - {waitingRoomVC?.Id}")
-				.AddField("Command Listen Channel", $"{commandListenChannel?.Name ?? "null"} - {waitingRoomVC?.Id}")
-				.AddField("Member Role", $"{memberRole.Name} - {memberRole?.Id}")
-				.AddField("Muted Role", $"{mutedRole.Name} - {mutedRole.Id}")
-				.AddField("Bot Manager Role", $"{botManagerRole.Name} - {botManagerRole.Id}")
-				.WithColor(DiscordColor.IndianRed)
-				.Build());
+			if (error == string.Empty)
+			{
+				embedContent.AddRange(new[]
+				{
+					new KeyValuePair<string, string>("Guild", $"{ctx.Guild.Name} - {ctx.Guild.Id}"),
+					new KeyValuePair<string, string>("Parent Category", $"{parentCategory?.Mention ?? "null"} - {parentCategory?.Id}"),
+					new KeyValuePair<string, string>("Waiting Room VC", $"{waitingRoomVC?.Mention ?? "null"} - {waitingRoomVC?.Id}"),
+					new KeyValuePair<string, string>("Command Listen Channel", $"{commandListenChannel?.Mention ?? "null"} - {waitingRoomVC?.Id}"),
+					new KeyValuePair<string, string>("Member Role", $"{memberRole.Mention} - {memberRole?.Id}"),
+					new KeyValuePair<string, string>("Muted Role", $"{mutedRole.Mention} - {mutedRole.Id}"),
+					new KeyValuePair<string, string>("Bot Manager Role", $"{botManagerRole.Mention} - {botManagerRole.Id}")
+				});
+				goto Completed;
+			}
+
+			embedContent.Add(new KeyValuePair<string, string>("Error", error));
 
 		Completed:
+			await ctx.Message.RespondAsync(CreateEmbedMessage(ctx, messageType, $"Registering guild \"{ctx.Guild.Name}\" ({ctx.Guild.Id})", embedContent));
 			return;
 		}
-
-		//This will be fun to work on
-		//TODO a wizard command that will step through the channel creation process and use reactions for easy and convinient channel creation for less experienced users
 
 		//TODO this command should only be allowed to be called by people with Admin powers or bot-master roles
 		[Command("permit")]
@@ -96,7 +103,17 @@ namespace NuggetOfficial.Commands
 			}
 		}
 
-		//TODO [Command("checkperms")] //This command will outline a member's permissions neatly in an embed
+		[Command("createvcwizard")]
+		public async Task ChannelCreationWizard(CommandContext ctx)
+		{
+			await ctx.RespondAsync("I'm not a miracle worker this shit gonna take a while to implement");
+		}
+
+		[Command("checkperms")] //This command will outline a member's permissions neatly in an embed
+		public async Task CheckMemberPermissions(CommandContext ctx)
+		{
+			await RespondAsync(ctx.Message, "NYI");
+		}
 
 		//TODO create version for rename
 		[Command("createvc")]
@@ -114,7 +131,7 @@ namespace NuggetOfficial.Commands
 					goto Completed;
 				}
 
-				if (!ValidateMemberCreationPermissions(ctx.Guild, ctx.Member, publicity, region, out error))
+				if (!ValidateMemberCreationPermissions(ctx.Guild, ctx.Member, null, publicity, region, out error)) //TODO implement channel name
 				{
 					messageType = MessageType.Error;
 					goto Completed;
@@ -161,14 +178,14 @@ namespace NuggetOfficial.Commands
 		[Command("updatevc")]
 		public async Task UpdateVC(CommandContext ctx, ChannelPublicity publicity = ChannelPublicity.Public, int? maxUsers = 0, int? bitrate = 64000, VoiceRegion region = VoiceRegion.Automatic)
 		{
-
+			await RespondAsync(ctx.Message, "NYI");
 		}
 
 		//TODO implement
 		[Command("whitelist")]
 		public async Task Whitelist(CommandContext ctx, params DiscordMember[] memberList)
 		{
-
+			await RespondAsync(ctx.Message, "NYI");
 		}
 
 		//TODO extrapolate this so the owner can specify an ID or Name (probably not) to delete instead of be in the vc (for convinence)
@@ -353,9 +370,9 @@ namespace NuggetOfficial.Commands
 			return channelPermissionsBuilderList;
 		}
 
-		bool ValidateMemberCreationPermissions(DiscordGuild guild, DiscordMember member, ChannelPublicity requestedPublicity, VoiceRegion requestedRegion, out string error)
+		bool ValidateMemberCreationPermissions(DiscordGuild guild, DiscordMember member, string channelName, ChannelPublicity requestedPublicity, VoiceRegion requestedRegion, out string error)
 		{
-			return registeredGuildData[guild].CheckPermission(member, requestedPublicity, requestedRegion, out error);
+			return registeredGuildData[guild].CheckPermission(member, channelName, requestedPublicity, requestedRegion, out error);
 		}
 		#endregion
 	}

@@ -235,7 +235,7 @@ namespace NuggetOfficial.Data.VoiceModule
 			}
 
 			/// <summary>
-			/// TODO
+			/// TODO Documentation comment
 			/// </summary>
 			/// <param name="everyonePermission"></param>
 			/// <param name="rolewisePermissions"></param>
@@ -316,7 +316,7 @@ namespace NuggetOfficial.Data.VoiceModule
 			/// <param name="requestedRegion"></param>
 			/// <param name="error"></param>
 			/// <returns></returns>
-			public bool CheckPermission(DiscordMember member, ChannelPublicity requestedPublicity, VoiceRegion requestedRegion, out string error)
+			public bool CheckPermission(DiscordMember member, string name, ChannelPublicity requestedPublicity, VoiceRegion requestedRegion, out string error)
 			{
 				VoiceChannelCreationPermissions highestPrecedencePermissions = null;
 				int existingChannels = (createdChannels.ContainsKey(member) ? createdChannels[member]?.Count : 0) ?? 0;
@@ -342,7 +342,7 @@ namespace NuggetOfficial.Data.VoiceModule
 					highestPrecedencePermissions = memberwisePermissions[member];
 				}
 
-				return (highestPrecedencePermissions ?? EveryonePermission).ValidateChannelCreationAuthority(requestedPublicity, existingChannels, requestedRegion, out error);
+				return (highestPrecedencePermissions ?? EveryonePermission).ValidateChannelCreationAuthority(!((name is null) || name == string.Empty), requestedPublicity, existingChannels, requestedRegion, out error);
 			}
 
 			public List<DiscordChannel> GetChannels(DiscordMember member)
