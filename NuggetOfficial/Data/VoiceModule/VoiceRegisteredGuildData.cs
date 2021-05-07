@@ -71,7 +71,7 @@ namespace NuggetOfficial.Data.VoiceModule
 		/// <param name="memberwisePermissions">Permissions which apply to members directly</param>
 		/// <param name="error">If an error occurrs durring initialization, this field will be populated</param>
 		/// <returns>True if no error occurs during initialization, false if otherwise</returns>
-		public bool InitializeGuildPermissions(DiscordGuild guild, VoiceChannelPermissions everyonePermission, IEnumerable<KeyValuePair<DiscordRole, VoiceChannelPermissions>> rolewisePermissions, IEnumerable<KeyValuePair<DiscordMember, VoiceChannelPermissions>> memberwisePermissions, out string error)
+		public bool InitializeGuildPermissions(DiscordGuild guild, VoiceChannelCreationPermissions everyonePermission, IEnumerable<KeyValuePair<DiscordRole, VoiceChannelCreationPermissions>> rolewisePermissions, IEnumerable<KeyValuePair<DiscordMember, VoiceChannelCreationPermissions>> memberwisePermissions, out string error)
 		{
 			error = string.Empty;
 
@@ -96,7 +96,7 @@ namespace NuggetOfficial.Data.VoiceModule
 		/// <param name="memberwisePermissions">New memberwise permissions. Will only update existing members if they already exist, and will add new members to the list if they do not</param>
 		/// <param name="error">If an error occurrs durring the update, this field will be populated</param>
 		/// <returns>True of no error occurs during the update, false if otherwise</returns>
-		public bool UpdateGuildPermissions(DiscordGuild guild, VoiceChannelPermissions everyonePermission, IEnumerable<KeyValuePair<DiscordRole, VoiceChannelPermissions>> rolewisePermissions, IEnumerable<KeyValuePair<DiscordMember, VoiceChannelPermissions>> memberwisePermissions, out string error)
+		public bool UpdateGuildPermissions(DiscordGuild guild, VoiceChannelCreationPermissions everyonePermission, IEnumerable<KeyValuePair<DiscordRole, VoiceChannelCreationPermissions>> rolewisePermissions, IEnumerable<KeyValuePair<DiscordMember, VoiceChannelCreationPermissions>> memberwisePermissions, out string error)
 		{
 			error = string.Empty;
 
@@ -174,7 +174,7 @@ namespace NuggetOfficial.Data.VoiceModule
 			/// <summary>
 			/// The permission default that everyone without a role in the server adopts when creating voice channels
 			/// </summary>
-			public VoiceChannelPermissions EveryonePermission { get; private set; }
+			public VoiceChannelCreationPermissions EveryonePermission { get; private set; }
 
 			/// <summary>
 			/// The created channel count per member in this server
@@ -194,8 +194,8 @@ namespace NuggetOfficial.Data.VoiceModule
 					return createdChannels[member];
 				}
 			}
-			Dictionary<DiscordRole, VoiceChannelPermissions> rolewisePermissions;
-			Dictionary<DiscordMember, VoiceChannelPermissions> memberwisePermissions;
+			Dictionary<DiscordRole, VoiceChannelCreationPermissions> rolewisePermissions;
+			Dictionary<DiscordMember, VoiceChannelCreationPermissions> memberwisePermissions;
 
 			/// <summary>
 			/// TODO
@@ -215,8 +215,8 @@ namespace NuggetOfficial.Data.VoiceModule
 				BotManagerRole = BotManagerRole;
 
 				EveryonePermission = null;
-				rolewisePermissions = new Dictionary<DiscordRole, VoiceChannelPermissions>();
-				memberwisePermissions = new Dictionary<DiscordMember, VoiceChannelPermissions>();
+				rolewisePermissions = new Dictionary<DiscordRole, VoiceChannelCreationPermissions>();
+				memberwisePermissions = new Dictionary<DiscordMember, VoiceChannelCreationPermissions>();
 			}
 			/// <summary>
 			/// TODO
@@ -229,7 +229,7 @@ namespace NuggetOfficial.Data.VoiceModule
 			/// <param name="everyonePermission"></param>
 			/// <param name="rolewisePermissions"></param>
 			/// <param name="memberwisePermissions"></param>
-			public GuildData(DiscordChannel parentCategory, DiscordChannel waitingRoomVc, DiscordChannel commandListenChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole, VoiceChannelPermissions everyonePermission, IEnumerable<KeyValuePair<DiscordRole, VoiceChannelPermissions>> rolewisePermissions, IEnumerable<KeyValuePair<DiscordMember, VoiceChannelPermissions>> memberwisePermissions) : this(parentCategory, waitingRoomVc, commandListenChannel, memberRole, mutedRole, botManagerRole)
+			public GuildData(DiscordChannel parentCategory, DiscordChannel waitingRoomVc, DiscordChannel commandListenChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole, VoiceChannelCreationPermissions everyonePermission, IEnumerable<KeyValuePair<DiscordRole, VoiceChannelCreationPermissions>> rolewisePermissions, IEnumerable<KeyValuePair<DiscordMember, VoiceChannelCreationPermissions>> memberwisePermissions) : this(parentCategory, waitingRoomVc, commandListenChannel, memberRole, mutedRole, botManagerRole)
 			{
 				InitializePermissions(everyonePermission, rolewisePermissions, memberwisePermissions);
 			}
@@ -240,11 +240,11 @@ namespace NuggetOfficial.Data.VoiceModule
 			/// <param name="everyonePermission"></param>
 			/// <param name="rolewisePermissions"></param>
 			/// <param name="memberwisePermissions"></param>
-			public void InitializePermissions(VoiceChannelPermissions everyonePermission, IEnumerable<KeyValuePair<DiscordRole, VoiceChannelPermissions>> rolewisePermissions, IEnumerable<KeyValuePair<DiscordMember, VoiceChannelPermissions>> memberwisePermissions)
+			public void InitializePermissions(VoiceChannelCreationPermissions everyonePermission, IEnumerable<KeyValuePair<DiscordRole, VoiceChannelCreationPermissions>> rolewisePermissions, IEnumerable<KeyValuePair<DiscordMember, VoiceChannelCreationPermissions>> memberwisePermissions)
 			{
-				this.EveryonePermission = everyonePermission ?? new VoiceChannelPermissions();
-				this.rolewisePermissions = new Dictionary<DiscordRole, VoiceChannelPermissions>(rolewisePermissions ?? new KeyValuePair<DiscordRole, VoiceChannelPermissions>[] { });
-				this.memberwisePermissions = new Dictionary<DiscordMember, VoiceChannelPermissions>(memberwisePermissions ?? new KeyValuePair<DiscordMember, VoiceChannelPermissions>[] { });
+				this.EveryonePermission = everyonePermission ?? new VoiceChannelCreationPermissions();
+				this.rolewisePermissions = new Dictionary<DiscordRole, VoiceChannelCreationPermissions>(rolewisePermissions ?? new KeyValuePair<DiscordRole, VoiceChannelCreationPermissions>[] { });
+				this.memberwisePermissions = new Dictionary<DiscordMember, VoiceChannelCreationPermissions>(memberwisePermissions ?? new KeyValuePair<DiscordMember, VoiceChannelCreationPermissions>[] { });
 			}
 
 			/// <summary>
@@ -253,7 +253,7 @@ namespace NuggetOfficial.Data.VoiceModule
 			/// <param name="everyonePermission">Updated everyone permission. Set null to ignore</param>
 			/// <param name="rolewisePermissions">Updated rolewise permissions. Set null to ignore, set value to null to remove coresponding key from dictionary, set key and value to update existing or add new value repsectively</param>
 			/// <param name="memberwisePermissions">Updated memberwise permissions. Set null to ignore, set value to null to remove coresponding key from dictionary, set key and value to update existing or add new value repsectively</param>
-			public void UpdatePermissions(VoiceChannelPermissions everyonePermission, IEnumerable<KeyValuePair<DiscordRole, VoiceChannelPermissions>> rolewisePermissions, IEnumerable<KeyValuePair<DiscordMember, VoiceChannelPermissions>> memberwisePermissions)
+			public void UpdatePermissions(VoiceChannelCreationPermissions everyonePermission, IEnumerable<KeyValuePair<DiscordRole, VoiceChannelCreationPermissions>> rolewisePermissions, IEnumerable<KeyValuePair<DiscordMember, VoiceChannelCreationPermissions>> memberwisePermissions)
 			{
 				if (!(everyonePermission is null))
 				{
@@ -318,7 +318,7 @@ namespace NuggetOfficial.Data.VoiceModule
 			/// <returns></returns>
 			public bool CheckPermission(DiscordMember member, ChannelPublicity requestedPublicity, VoiceRegion requestedRegion, out string error)
 			{
-				VoiceChannelPermissions highestPrecedencePermissions = null;
+				VoiceChannelCreationPermissions highestPrecedencePermissions = null;
 				int existingChannels = (createdChannels.ContainsKey(member) ? createdChannels[member]?.Count : 0) ?? 0;
 
 				int highestRolePosition = -1;
@@ -342,7 +342,7 @@ namespace NuggetOfficial.Data.VoiceModule
 					highestPrecedencePermissions = memberwisePermissions[member];
 				}
 
-				return (highestPrecedencePermissions ?? EveryonePermission).ValidateChannelCreationParameterAuthority(requestedPublicity, existingChannels, requestedRegion, out error);
+				return (highestPrecedencePermissions ?? EveryonePermission).ValidateChannelCreationAuthority(requestedPublicity, existingChannels, requestedRegion, out error);
 			}
 
 			public List<DiscordChannel> GetChannels(DiscordMember member)

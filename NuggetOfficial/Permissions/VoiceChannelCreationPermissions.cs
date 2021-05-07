@@ -118,10 +118,10 @@ namespace NuggetOfficial.Authority
 		Authorized
 	}
 
-	public class VoiceChannelPermissions
+	public class VoiceChannelCreationPermissions
 	{
-		public static VoiceChannelPermissions Authorized { get => new VoiceChannelPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Authorized, ChannelCreationQuantityAuthority.Unlimited, ChannelAccesibilityConfigurationAuthority.Authorized, ChannelRegionConfigurationAuthority.Authorized); }
-		public static VoiceChannelPermissions Unauthorized { get => new VoiceChannelPermissions(ChannelCreationAuthority.Unauthorized, ChannelRenameAuthority.Unauthorized, ChannelCreationQuantityAuthority.None, ChannelAccesibilityConfigurationAuthority.Unauthorized, ChannelRegionConfigurationAuthority.Unauthorized); }
+		public static VoiceChannelCreationPermissions Authorized { get => new VoiceChannelCreationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Authorized, ChannelCreationQuantityAuthority.Unlimited, ChannelAccesibilityConfigurationAuthority.Authorized, ChannelRegionConfigurationAuthority.Authorized); }
+		public static VoiceChannelCreationPermissions Unauthorized { get => new VoiceChannelCreationPermissions(); }
 
 		readonly ChannelCreationAuthority channelCreationAuthority;
 		readonly ChannelRenameAuthority channelRenameAuthority;
@@ -133,7 +133,7 @@ namespace NuggetOfficial.Authority
 		/// <summary>
 		/// Create a default authorization scheme where the represented member or role is completely unauthorized
 		/// </summary>
-		public VoiceChannelPermissions()
+		public VoiceChannelCreationPermissions()
 		{
 			channelCreationAuthority = ChannelCreationAuthority.Unauthorized;
 			channelRenameAuthority = ChannelRenameAuthority.Unauthorized;
@@ -149,7 +149,7 @@ namespace NuggetOfficial.Authority
 		/// <param name="channelAccesibilityConfigurationAuthority">Represented member or role's authorization to configure a channel's accesibility</param>
 		/// <param name="channelRegionConfigurationAuthority">Represented member or role's authorization to configure a channel's voice server location</param>
 		/// <param name="specificChannelCreationQuantity">Number of channels the represented member can create. Only applies to members or roles with the <c>ChannelCreationQuantityAuthority.Specified</c> authority</param>
-		public VoiceChannelPermissions(ChannelCreationAuthority channelCreationAuthority, ChannelRenameAuthority channelRenameAuthority, ChannelCreationQuantityAuthority channelCreationQuantityAuthority, ChannelAccesibilityConfigurationAuthority channelAccesibilityConfigurationAuthority, ChannelRegionConfigurationAuthority channelRegionConfigurationAuthority, int specificChannelCreationQuantity = 1)
+		public VoiceChannelCreationPermissions(ChannelCreationAuthority channelCreationAuthority, ChannelRenameAuthority channelRenameAuthority, ChannelCreationQuantityAuthority channelCreationQuantityAuthority, ChannelAccesibilityConfigurationAuthority channelAccesibilityConfigurationAuthority, ChannelRegionConfigurationAuthority channelRegionConfigurationAuthority, int specificChannelCreationQuantity = 1)
 		{
 			this.channelCreationAuthority = channelCreationAuthority;
 			this.channelRenameAuthority = channelRenameAuthority;
@@ -167,9 +167,15 @@ namespace NuggetOfficial.Authority
 		/// <param name="requestedRegion">The requested voice region to use for the channel to be created</param>
 		/// <param name="error">If a parameter does not adhere to this scheme, an error message will be generated</param>
 		/// <returns><c>true</c> if the parameters adhere to this permission scheme, <c>false</c> if otherwise</returns>
-		public bool ValidateChannelCreationParameterAuthority(ChannelPublicity requestedPublicity, int existingChannels, VoiceRegion requestedRegion, out string error)
+		public bool ValidateChannelCreationAuthority(bool attemptRename, ChannelPublicity requestedPublicity, int existingChannels, VoiceRegion requestedRegion, out string error)
 		{
 			error = string.Empty;
+
+			if (attemptRename && channelRenameAuthority != ChannelRenameAuthority.Authorized)
+			{
+				error = $"Member does not have the authority to rename voice channels";
+				goto RequestedParametersInvalid;
+			}
 
 			if (channelCreationAuthority == ChannelCreationAuthority.Unauthorized)
 			{
