@@ -3,6 +3,7 @@ using NuggetOfficial.Authority;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace NuggetOfficial.Data.VoiceModule
 {
@@ -10,12 +11,12 @@ namespace NuggetOfficial.Data.VoiceModule
 	/// <summary>
 	/// This class holds references to DiscordGuilds and their subsequent data used by the bot's VC features. [NYI/NYT] This class can be directly serialized and deserialized
 	/// </summary>
-	[Serializable]
 	public class VoiceRegisteredGuildData //TODO extract the important stuff into an Interface so it will be negligible to support other data storage methods
 	{
 		//should store channel, user, and permission data on a per-guild basis
 		//should be serializable and saved before the bot is terminated
 		//should be loaded from a file every time the bot starts if one exists
+		[JsonProperty("registered_guilds")]
 		readonly Dictionary<DiscordGuild, GuildData> registeredGuilds = new Dictionary<DiscordGuild, GuildData>();
 
 		/// <summary>
@@ -23,6 +24,7 @@ namespace NuggetOfficial.Data.VoiceModule
 		/// </summary>
 		/// <param name="guild">Guild to get data for</param>
 		/// <returns>The valid stored guild data, if one exists. null if otherwise</returns>
+		[JsonIgnore]
 		public GuildData this[DiscordGuild guild]
 		{
 			get
@@ -30,6 +32,13 @@ namespace NuggetOfficial.Data.VoiceModule
 				if (!registeredGuilds.ContainsKey(guild)) return null;
 				return registeredGuilds[guild];
 			}
+		}
+
+		public VoiceRegisteredGuildData() { }
+		[JsonConstructor]
+		VoiceRegisteredGuildData(DiscordGuild toRegister, DiscordChannel parentCategory, DiscordChannel waitingRoomVc, DiscordChannel commandListenChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole)
+		{
+			RegisterGuild(toRegister, parentCategory, waitingRoomVc, commandListenChannel, memberRole, mutedRole, botManagerRole, out _);
 		}
 
 		/// <summary>
@@ -144,28 +153,32 @@ namespace NuggetOfficial.Data.VoiceModule
 		/// <summary>
 		/// Contains the per-guild data required for the VC system to function
 		/// </summary>
-		[Serializable]
 		public class GuildData
 		{
 			/// <summary>
 			/// The parent category all created channels will be sorted under
 			/// </summary>
+			[JsonProperty("parent_category", Required = Required.Always)]
 			public DiscordChannel ParentCategory { get; private set; }
 			/// <summary>
 			/// The VC members must be waiting in in order to create channels
 			/// </summary>
+			[JsonProperty("waiting_room_vc")]
 			public DiscordChannel WaitingRoomVC { get; private set; }
 			/// <summary>
 			/// The text channel the bot will respond to commands in
 			/// </summary>
+			[JsonProperty("command_listen_channel")]
 			public DiscordChannel CommandListenChannel { get; private set; }
 			/// <summary>
 			/// A role that specifies a general member. The bot will not take action on messages sent if the sender doesn't have this role
 			/// </summary>
+			[JsonProperty("member_role")]
 			public DiscordRole MemberRole { get; private set; }
 			/// <summary>
 			/// A role that specifies a muted member. The bot will not take actions on messages sent if the sender has this role, and will dissalow members with this role from joining any created channel
 			/// </summary>
+			[JsonProperty("muted_role")]
 			public DiscordRole MutedRole { get; private set; }
 			/// <summary>
 			/// Members with this role are always permitted to use VC commands
@@ -174,11 +187,13 @@ namespace NuggetOfficial.Data.VoiceModule
 			/// <summary>
 			/// The permission default that everyone without a role in the server adopts when creating voice channels
 			/// </summary>
+			[JsonProperty("everyone_permission")]
 			public VoiceChannelCreationPermissions EveryonePermission { get; private set; }
 
 			/// <summary>
 			/// The created channel count per member in this server
 			/// </summary>
+			[JsonProperty("created_channels")]
 			readonly Dictionary<DiscordMember, List<DiscordChannel>> createdChannels = new Dictionary<DiscordMember, List<DiscordChannel>>();
 
 			/// <summary>
@@ -186,6 +201,7 @@ namespace NuggetOfficial.Data.VoiceModule
 			/// </summary>
 			/// <param name="member"></param>
 			/// <returns></returns>
+			[JsonIgnore]
 			public List<DiscordChannel> this[DiscordMember member]
 			{
 				get
@@ -194,7 +210,9 @@ namespace NuggetOfficial.Data.VoiceModule
 					return createdChannels[member];
 				}
 			}
+			[JsonProperty("rolewise_permissions")]
 			Dictionary<DiscordRole, VoiceChannelCreationPermissions> rolewisePermissions;
+			[JsonProperty("memberwise_permissions")]
 			Dictionary<DiscordMember, VoiceChannelCreationPermissions> memberwisePermissions;
 
 			/// <summary>
@@ -212,7 +230,7 @@ namespace NuggetOfficial.Data.VoiceModule
 				CommandListenChannel = commandListenChannel;
 				MemberRole = memberRole;
 				MutedRole = mutedRole;
-				BotManagerRole = BotManagerRole;
+				BotManagerRole = botManagerRole;
 
 				EveryonePermission = null;
 				rolewisePermissions = new Dictionary<DiscordRole, VoiceChannelCreationPermissions>();

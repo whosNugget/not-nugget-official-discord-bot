@@ -6,11 +6,13 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Xml.Serialization;
-using System.Text.Json;
+using Newtonsoft.Json;
+using DSharpPlus.Entities;
+using DSharpPlus.Net.Serialization;
+using Newtonsoft.Json.Linq;
 
 namespace NuggetOfficial.Actions.Serialization
 {
-	public enum SerializationFormat { JSON, XML, Binary }
 	/// <summary>
 	/// Result container that specifies the success of the serialization operation and any error messages if one occurred
 	/// </summary>
@@ -48,6 +50,29 @@ namespace NuggetOfficial.Actions.Serialization
 	/// </summary>
 	public static class Serializer
 	{
+		private class StringToGenericSnowflake<T> : JsonConverter where T : SnowflakeObject
+		{
+			public override bool CanConvert(Type objectType)
+			{
+				return objectType == typeof(T);
+			}
+
+			public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+			{
+				DiscordJson.PopulateObject(JToken.ReadFrom(reader), existingValue);
+				return existingValue;
+			}
+
+			public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+			{
+				if (value is null) writer.WriteNull();
+				else
+				{
+					serializer.Serialize(writer, DiscordJson.SerializeObject(value));
+				}
+			}
+		}
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -57,7 +82,7 @@ namespace NuggetOfficial.Actions.Serialization
 		/// <param name="instance"></param>
 		/// <param name="output"></param>
 		/// <returns></returns>
-		public static async Task<AsyncSerializationResult> SerializeAsync<T>(string directory, string filename, T instance, SerializationFormat output)
+		public static async Task<AsyncSerializationResult> SerializeAsync<T>(string directory, string filename, T instance)
 		{
 			bool result = false;
 			string error = string.Empty;
@@ -73,30 +98,13 @@ namespace NuggetOfficial.Actions.Serialization
 					goto Completed;
 				}
 
-				using (Stream serializeStream = new FileStream($"{directory}{filename}", FileMode.OpenOrCreate))
+				await using (TextWriter serializeStream = new StreamWriter($"{directory}{filename}", false))
 				{
-					switch (output)
+					await Task.Run(() =>
 					{
-						case SerializationFormat.JSON:
-							await JsonSerializer.SerializeAsync(serializeStream, instance);
-							break;
-
-						case SerializationFormat.XML:
-							await Task.Run(() =>
-							{
-								XmlSerializer xmlS = new XmlSerializer(typeof(T));
-								xmlS.Serialize(serializeStream, instance);
-							});
-							break;
-
-						case SerializationFormat.Binary:
-							await Task.Run(() =>
-							{
-								BinaryFormatter binS = new BinaryFormatter();
-								binS.Serialize(serializeStream, instance);
-							});
-							break;
-					}
+						JsonSerializer jsonS = JsonSerializer.Create(new JsonSerializerSettings { Formatting = Formatting.Indented });
+						jsonS.Serialize(serializeStream, instance, typeof(T));
+					});
 				}
 
 				result = true;
@@ -111,7 +119,7 @@ namespace NuggetOfficial.Actions.Serialization
 			return new AsyncSerializationResult(result, error);
 		}
 
-		public static async Task<AsyncDeserializationResult<T>> DeserializeAsync<T>(string filePath, SerializationFormat format)
+		public static async Task<AsyncDeserializationResult<T>> DeserializeAsync<T>(string filePath)
 		{
 			bool result = false;
 			string error = string.Empty;
@@ -125,31 +133,12 @@ namespace NuggetOfficial.Actions.Serialization
 
 			try
 			{
-				using (Stream serializeStream = new FileStream(filePath, FileMode.Open))
+				await Task.Run(() =>
 				{
-					switch (format)
-					{
-						case SerializationFormat.JSON:
-							instance = await JsonSerializer.DeserializeAsync<T>(serializeStream);
-							break;
-
-						case SerializationFormat.XML:
-							await Task.Run(() =>
-							{
-								XmlSerializer xmlS = new XmlSerializer(typeof(T));
-								instance = (T)xmlS.Deserialize(serializeStream);
-							});
-							break;
-
-						case SerializationFormat.Binary:
-							await Task.Run(() =>
-							{
-								BinaryFormatter binS = new BinaryFormatter();
-								instance = (T)binS.Deserialize(serializeStream);
-							});
-							break;
-					}
-				}
+					using TextReader deserializeStream = new StreamReader(filePath);
+					JsonSerializer jsonS = JsonSerializer.Create(new JsonSerializerSettings { Converters = new List<JsonConverter>(new[] { new StringToGenericSnowflake<DiscordGuild>() }) });
+					instance = (T)jsonS.Deserialize(deserializeStream, typeof(T));
+				});
 
 				result = true;
 			}

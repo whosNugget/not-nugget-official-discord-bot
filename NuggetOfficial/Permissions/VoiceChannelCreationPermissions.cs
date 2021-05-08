@@ -1,4 +1,6 @@
-﻿using NuggetOfficial.Data;
+﻿using Newtonsoft.Json;
+using NuggetOfficial.Data;
+using System;
 
 namespace NuggetOfficial.Authority
 {
@@ -118,16 +120,23 @@ namespace NuggetOfficial.Authority
 		Authorized
 	}
 
+	[Serializable, JsonObject]
 	public class VoiceChannelCreationPermissions
 	{
 		public static VoiceChannelCreationPermissions Authorized { get => new VoiceChannelCreationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Authorized, ChannelCreationQuantityAuthority.Unlimited, ChannelAccesibilityConfigurationAuthority.Authorized, ChannelRegionConfigurationAuthority.Authorized); }
 		public static VoiceChannelCreationPermissions Unauthorized { get => new VoiceChannelCreationPermissions(); }
 
+		[JsonProperty("channel_creation_authority")]
 		readonly ChannelCreationAuthority channelCreationAuthority;
+		[JsonProperty("channel_rename_authority")]
 		readonly ChannelRenameAuthority channelRenameAuthority;
+		[JsonProperty("channel_creation_quantity_authority")]
 		readonly ChannelCreationQuantityAuthority channelCreationQuantityAuthority;
+		[JsonProperty("channel_accesibility_configuration_authority")]
 		readonly ChannelAccesibilityConfigurationAuthority channelAccesibilityConfigurationAuthority;
+		[JsonProperty("channel_region_configuration_authority")]
 		readonly ChannelRegionConfigurationAuthority channelRegionConfigurationAuthority;
+		[JsonProperty("channel_creation_quantity")]
 		readonly int specificChannelCreationQuantity;
 
 		/// <summary>

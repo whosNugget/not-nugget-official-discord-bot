@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NuggetOfficial.Data.VoiceModule;
+using NuggetOfficial.Actions.Serialization;
 
 namespace NuggetOfficial.Commands
 {
@@ -40,6 +41,26 @@ namespace NuggetOfficial.Commands
 		}
 
 		public override async Task BeforeExecutionAsync(CommandContext ctx) => await ctx.TriggerTypingAsync();
+
+		[Command("testserialize")]
+		public async Task TestSerialize(CommandContext ctx)
+		{
+			AsyncSerializationResult result = await Serializer.SerializeAsync("Data/GuildData/", "guildData.json", registeredGuildData);
+
+			MessageType messageType = result.Success ? MessageType.Success : MessageType.Error;
+
+			await ctx.RespondAsync(CreateEmbedMessage(ctx, messageType, "Serialization Output", new List<KeyValuePair<string, string>>(new[] { new KeyValuePair<string, string>("JSON result", $"{(result.Success ? "Success" : "Error: ")}{result.Error}") })));
+		}
+
+		[Command("testdeserialize")]
+		public async Task TestDeserialize(CommandContext ctx)
+		{
+			AsyncDeserializationResult<VoiceRegisteredGuildData> result = await Serializer.DeserializeAsync<VoiceRegisteredGuildData>("Data/GuildData/guildData.json");
+
+			MessageType messageType = result.Success ? MessageType.Success : MessageType.Error;
+
+			await ctx.RespondAsync(CreateEmbedMessage(ctx, messageType, "Serialization Output", new List<KeyValuePair<string, string>>(new[] { new KeyValuePair<string, string>("JSON output", $"{(result.Success ? "Success" : "Error: ")}{result.Error}") })));
+		}
 
 		[Command("registerguild")]
 		public async Task RegisterGuild(CommandContext ctx, DiscordChannel parentCategory, DiscordChannel waitingRoomVC, DiscordChannel commandListenChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole)
