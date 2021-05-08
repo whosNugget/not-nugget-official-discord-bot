@@ -18,7 +18,12 @@ namespace NuggetOfficial
 {
 	class Bot
 	{
-		static async Task Main()
+		static void Main()
+		{
+			Run().GetAwaiter().GetResult();
+		}
+
+		static async Task Run()
 		{
 			DiscordClient discord = new DiscordClient(new DiscordConfiguration()
 			{
