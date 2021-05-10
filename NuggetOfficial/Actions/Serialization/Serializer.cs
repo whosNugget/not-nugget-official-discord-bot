@@ -10,6 +10,8 @@ using Newtonsoft.Json;
 using DSharpPlus.Entities;
 using DSharpPlus.Net.Serialization;
 using Newtonsoft.Json.Linq;
+using System.Collections.Concurrent;
+using System.Reflection;
 
 namespace NuggetOfficial.Actions.Serialization
 {
@@ -50,26 +52,74 @@ namespace NuggetOfficial.Actions.Serialization
 	/// </summary>
 	public static class Serializer
 	{
-		private class StringToGenericSnowflake<T> : JsonConverter where T : SnowflakeObject
+		public class StringToGenericSnowflake<T> : JsonConverter where T : SnowflakeObject
 		{
-			public override bool CanConvert(Type objectType)
+			//public override bool CanConvert(Type objectType)
+			//{
+			//	return objectType == typeof(T);
+			//}
+
+			//public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+			//{
+			//	DiscordJson.PopulateObject(JToken.ReadFrom(reader), existingValue);
+			//	return existingValue;
+			//}
+
+			//public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+			//{
+			//	if (value is null) writer.WriteNull();
+			//	else
+			//	{
+			//		serializer.Serialize(writer, value);
+			//	}
+			//}
+			public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
 			{
-				return objectType == typeof(T);
+				if (value == null)
+				{
+					writer.WriteNull();
+				}
+				else
+				{
+					var type = value.GetType().GetTypeInfo();
+					JToken.FromObject(type.GetDeclaredProperty("Values").GetValue(value)).WriteTo(writer);
+				}
 			}
 
 			public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
 			{
-				DiscordJson.PopulateObject(JToken.ReadFrom(reader), existingValue);
-				return existingValue;
+				var constructor = objectType.GetTypeInfo().DeclaredConstructors
+					.FirstOrDefault(e => !e.IsStatic && e.GetParameters().Length == 0);
+
+				var dict = constructor.Invoke(new object[] { });
+
+				// the default name of an indexer is "Item"
+				var properties = objectType.GetTypeInfo().GetDeclaredProperty("Item");
+
+				var entries = (System.Collections.IEnumerable)serializer.Deserialize(reader, objectType.GenericTypeArguments[1].MakeArrayType());
+				foreach (var entry in entries)
+				{
+					properties.SetValue(dict, entry, new object[]
+					{
+					(entry as SnowflakeObject)?.Id
+					?? (entry as DiscordVoiceState)?.User?.Id
+					?? throw new InvalidOperationException($"Type {entry?.GetType()} is not deserializable")
+					});
+				}
+
+				return dict;
 			}
 
-			public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+			public override bool CanConvert(Type objectType)
 			{
-				if (value is null) writer.WriteNull();
-				else
-				{
-					serializer.Serialize(writer, DiscordJson.SerializeObject(value));
-				}
+				if (!objectType.IsGenericType) return false;
+				var genericTypedef = objectType.GetGenericTypeDefinition();
+				if (genericTypedef != typeof(Dictionary<,>) && genericTypedef != typeof(ConcurrentDictionary<,>)) return false;
+				if (objectType.GenericTypeArguments[0] != typeof(ulong)) return false;
+
+				var valueParam = objectType.GenericTypeArguments[1];
+				return typeof(SnowflakeObject).GetTypeInfo().IsAssignableFrom(valueParam.GetTypeInfo()) ||
+					   valueParam == typeof(DiscordVoiceState);
 			}
 		}
 
@@ -91,13 +141,6 @@ namespace NuggetOfficial.Actions.Serialization
 
 			try
 			{
-				Attribute[] attributes = Attribute.GetCustomAttributes(instance.GetType());
-				if (!attributes.Contains(new SerializableAttribute()))
-				{
-					error = $"The provided object {nameof(T)} was not marked as serializable";
-					goto Completed;
-				}
-
 				await using (TextWriter serializeStream = new StreamWriter($"{directory}{filename}", false))
 				{
 					await Task.Run(() =>
@@ -136,7 +179,7 @@ namespace NuggetOfficial.Actions.Serialization
 				await Task.Run(() =>
 				{
 					using TextReader deserializeStream = new StreamReader(filePath);
-					JsonSerializer jsonS = JsonSerializer.Create(new JsonSerializerSettings { Converters = new List<JsonConverter>(new[] { new StringToGenericSnowflake<DiscordGuild>() }) });
+					JsonSerializer jsonS = JsonSerializer.Create(new JsonSerializerSettings { Converters = new List<JsonConverter>(new JsonConverter[] { new StringToGenericSnowflake<DiscordGuild>(), new StringToGenericSnowflake<DiscordRole>(), new StringToGenericSnowflake<DiscordMember>(), new StringToGenericSnowflake<DiscordChannel>() }) });
 					instance = (T)jsonS.Deserialize(deserializeStream, typeof(T));
 				});
 
