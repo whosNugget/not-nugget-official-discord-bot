@@ -17,13 +17,7 @@ namespace NuggetOfficial.Commands
 {
 	public class VoiceChannelModule : BaseCommandModule
 	{
-		//TODO this should reference a database (or databases) for efficient and lightweight data storage for all this information. This is IMPERATIVE if this bot will
-		//ever be sharded and publically released (which is a possibility, though I think it will always be a mini passion project that will only ever be used in my server
-		//and maybe some friend's servers if they ask. If this bot is going to be in multiple servers, however, it is also required to use an external method of storing data,
-		//as the bot currently stores information for a single registerred guild, and it has no capability of holding information on multiple servers at the moment.
-		//When the time to convert this bot to a database instance, this class will need a massive refactor. It will be a fun development challenge, though :)
-
-		//TODO full conversion from responding with messages to responding with embeds required
+		//TODO full conversion from responding with messages to responding with embeds required (40% done)
 
 		enum MessageType
 		{
@@ -40,26 +34,22 @@ namespace NuggetOfficial.Commands
 			this.registeredGuildData = registeredGuildData;
 		}
 
-		public override async Task BeforeExecutionAsync(CommandContext ctx) => await ctx.TriggerTypingAsync();
+		public override async Task BeforeExecutionAsync(CommandContext ctx)
+		{
+			if (registeredGuildData.Rebuilding)
+			{
+				throw new Exception("Cancel execution of command - VoiceRegisteredGuildData is rebuilding from file");
+			}
+
+			await ctx.TriggerTypingAsync();
+		}
 
 		[Command("testserialize")]
 		public async Task TestSerialize(CommandContext ctx)
 		{
-			AsyncSerializationResult result = await Serializer.SerializeAsync("Data/GuildData/", "guildData.json", registeredGuildData);
-
+			SerializationResult result = Serializer.Serialize(ConfigurationManager.AppSettings.Get("voiceDataPath"), registeredGuildData);
 			MessageType messageType = result.Success ? MessageType.Success : MessageType.Error;
-
-			await ctx.RespondAsync(CreateEmbedMessage(ctx, messageType, "Serialization Output", new List<KeyValuePair<string, string>>(new[] { new KeyValuePair<string, string>("JSON result", $"{(result.Success ? "Success" : "Error: ")}{result.Error}") })));
-		}
-
-		[Command("testdeserialize")]
-		public async Task TestDeserialize(CommandContext ctx)
-		{
-			AsyncDeserializationResult<VoiceRegisteredGuildData> result = await Serializer.DeserializeAsync<VoiceRegisteredGuildData>("Data/GuildData/guildData.json");
-
-			MessageType messageType = result.Success ? MessageType.Success : MessageType.Error;
-
-			await ctx.RespondAsync(CreateEmbedMessage(ctx, messageType, "Serialization Output", new List<KeyValuePair<string, string>>(new[] { new KeyValuePair<string, string>("JSON output", $"{(result.Success ? "Success" : "Error: ")}{result.Error}") })));
+			await ctx.RespondAsync(CreateEmbedMessage(ctx, messageType, "Serialization Output", new List<KeyValuePair<string, string>>(new[] { new KeyValuePair<string, string>("JSON result", $"{(result.Success ? "Success" : "Error: ")}{result.ErrorMessage}") })));
 		}
 
 		[Command("registerguild")]

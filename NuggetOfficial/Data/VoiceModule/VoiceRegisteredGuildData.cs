@@ -2,9 +2,11 @@
 using DSharpPlus.Entities;
 using Newtonsoft.Json;
 using NuggetOfficial.Actions.Serialization;
+using NuggetOfficial.Actions.Serialization.Interfaces;
 using NuggetOfficial.Authority;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -17,9 +19,19 @@ namespace NuggetOfficial.Data.VoiceModule
 	/// <summary>
 	/// This class holds references to DiscordGuilds and their subsequent data used by the bot's VC features. [NYI/NYT] This class can be directly serialized and deserialized
 	/// </summary>
-	public class VoiceRegisteredGuildData //TODO extract the important stuff into an Interface so it will be negligible to support other data storage methods
+	[JsonDictionary]
+	public class VoiceRegisteredGuildData : ISerializable<VoiceRegisteredGuildData>, IDeserializable<VoiceRegisteredGuildData>
 	{
+		[JsonIgnore]
 		public Dictionary<DiscordGuild, GuildData> RegisteredGuilds { get; private set; } = new Dictionary<DiscordGuild, GuildData>();
+		
+		[JsonIgnore]
+		public bool Rebuilding { get => rebuilding; }
+		[JsonIgnore]
+		volatile bool rebuilding = false;
+
+		[JsonProperty("guild_data")]
+		Dictionary<ulong, GuildDataSerializableContainer> serializableContainer = null;
 
 		/// <summary>
 		/// Get the GuildData for the provided guild. Will return null instead of throw an exeption when any error occurs
@@ -145,17 +157,76 @@ namespace NuggetOfficial.Data.VoiceModule
 		}
 
 		/// <summary>
-		/// TODO
+		/// 
 		/// </summary>
+		/// <param name="client"></param>
 		/// <returns></returns>
-		public Dictionary<SnowflakeContainer<DiscordGuild>, GuildDataSerializer> GetSerializerObject()
+		public async Task<string> RebuildDeserializedDataFromClient(DiscordClient client)
 		{
-			Dictionary<SnowflakeContainer<DiscordGuild>, GuildDataSerializer> serializerDictionary = new Dictionary<SnowflakeContainer<DiscordGuild>, GuildDataSerializer>();
+			string error = string.Empty;
+
+			if (serializableContainer is null) return "No deserialized data";
+
+			rebuilding = true;
+			RegisteredGuilds = new Dictionary<DiscordGuild, GuildData>();
+
+			foreach (var kvp in serializableContainer)
+			{
+				if (client.Guilds.ContainsKey(kvp.Key))
+				{
+					DiscordGuild guild = client.Guilds[kvp.Key];
+					GuildData guildData = await kvp.Value.CreateGuildDataAsync(client.Guilds[kvp.Key]);
+
+					RegisteredGuilds.Add(guild, guildData);
+				}
+			}
+
+			rebuilding = false;
+			return error;
+		}
+
+		public SerializationResult Serialize(TextWriter writer, JsonSerializer serializer)
+		{
+			bool success = false;
+			string errorMessage = string.Empty;
+
+			serializableContainer = new Dictionary<ulong, GuildDataSerializableContainer>();
 			foreach (var kvp in RegisteredGuilds)
 			{
-				serializerDictionary.Add(new SnowflakeContainer<DiscordGuild>(kvp.Key), new GuildDataSerializer(kvp.Value));	
+				serializableContainer.Add(kvp.Key.Id, kvp.Value.CreateSerializableContainer());
 			}
-			return serializerDictionary;
+
+			try
+			{
+				serializer.Serialize(writer, serializableContainer);
+				success = true;
+			}
+			catch (Exception e)
+			{
+				errorMessage = e.Message;
+			}
+
+			serializableContainer = null;
+			
+			return new SerializationResult(success, errorMessage);
+		}
+
+		public DeserializationResult<VoiceRegisteredGuildData> Deserialize(TextReader reader, JsonSerializer serializer)
+		{
+			bool success = false;
+			string errorMesage = string.Empty;
+
+			try
+			{
+				serializableContainer = (Dictionary<ulong, GuildDataSerializableContainer>)serializer.Deserialize(reader, typeof(Dictionary<ulong, GuildDataSerializableContainer>));
+				success = true;
+			}
+			catch (Exception e)
+			{
+				errorMesage = e.Message;
+			}
+
+			return new DeserializationResult<VoiceRegisteredGuildData>(success, errorMesage, this);
 		}
 	}
 
@@ -221,6 +292,7 @@ namespace NuggetOfficial.Data.VoiceModule
 		/// </summary>
 		public Dictionary<DiscordMember, VoiceChannelCreationPermissions> MemberwisePermissions { get; private set; }
 
+		public GuildData() { }
 		/// <summary>
 		/// TODO
 		/// </summary>
@@ -428,9 +500,19 @@ namespace NuggetOfficial.Data.VoiceModule
 
 			return false;
 		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
+		public GuildDataSerializableContainer CreateSerializableContainer()
+		{
+			return new GuildDataSerializableContainer(this);
+		}
 	}
 
 	//TODO own file
+	[JsonObject("snowflake_container")]
 	public struct SnowflakeContainer<T> where T : SnowflakeObject
 	{
 		[JsonProperty("snowflake_id")]
@@ -453,63 +535,63 @@ namespace NuggetOfficial.Data.VoiceModule
 	}
 
 	//TODO own file
-	public class GuildDataSerializer
+	public class GuildDataSerializableContainer
 	{
 		[JsonProperty("parent_category")]
-		SnowflakeContainer<DiscordChannel> parentCategoryContainer;
+		public SnowflakeContainer<DiscordChannel> ParentCategoryContainer { get; private set; }
 		[JsonProperty("command_listen_channel")]
-		SnowflakeContainer<DiscordChannel> commandListenChannelContainer;
+		public SnowflakeContainer<DiscordChannel> CommandListenChannelContainer { get; private set; }
 		[JsonProperty("waiting_room_vc")]
-		SnowflakeContainer<DiscordChannel> waitingRoomVCContainer;
+		public SnowflakeContainer<DiscordChannel> WaitingRoomVCContainer { get; private set; }
 		[JsonProperty("member_role")]
-		SnowflakeContainer<DiscordRole> memberRoleContainer;
+		public SnowflakeContainer<DiscordRole> MemberRoleContainer { get; private set; }
 		[JsonProperty("muted_role")]
-		SnowflakeContainer<DiscordRole> mutedRoleContainer;
+		public SnowflakeContainer<DiscordRole> MutedRoleContainer { get; private set; }
 		[JsonProperty("bot_manager_role")]
-		SnowflakeContainer<DiscordRole> botManagerRoleContainer;
+		public SnowflakeContainer<DiscordRole> BotManagerRoleContainer { get; private set; }
 
 		[JsonProperty("everyone_permission")]
-		VoiceChannelCreationPermissions everyonePermission;
+		public VoiceChannelCreationPermissions EveryonePermission { get; private set; }
 
 		[JsonProperty("member_channels")]
-		Dictionary<SnowflakeContainer<DiscordMember>, List<SnowflakeContainer<DiscordChannel>>> createdChannelsContainer;
+		public Dictionary<ulong, List<SnowflakeContainer<DiscordChannel>>> CreatedChannelsContainer { get; private set; }
 		[JsonProperty("rolewise_permissions")]
-		Dictionary<SnowflakeContainer<DiscordRole>, VoiceChannelCreationPermissions> rolewisePermissionContainer;
+		public Dictionary<ulong, VoiceChannelCreationPermissions> RolewisePermissionContainer { get; private set; }
 		[JsonProperty("memberwise_permissions")]
-		Dictionary<SnowflakeContainer<DiscordMember>, VoiceChannelCreationPermissions> memberwisePermissionContainer;
+		public Dictionary<ulong, VoiceChannelCreationPermissions> MemberwisePermissionContainer { get; private set; }
 
-		public GuildDataSerializer() { }
-		public GuildDataSerializer(GuildData data)
+		public GuildDataSerializableContainer() { }
+		public GuildDataSerializableContainer(GuildData data)
 		{
-			parentCategoryContainer = new SnowflakeContainer<DiscordChannel>(data.ParentCategory);
-			commandListenChannelContainer = new SnowflakeContainer<DiscordChannel>(data.CommandListenChannel);
-			waitingRoomVCContainer = new SnowflakeContainer<DiscordChannel>(data.WaitingRoomVC);
-			memberRoleContainer = new SnowflakeContainer<DiscordRole>(data.MemberRole);
-			mutedRoleContainer = new SnowflakeContainer<DiscordRole>(data.MutedRole);
-			botManagerRoleContainer = new SnowflakeContainer<DiscordRole>(data.MutedRole);
+			ParentCategoryContainer = new SnowflakeContainer<DiscordChannel>(data.ParentCategory);
+			CommandListenChannelContainer = new SnowflakeContainer<DiscordChannel>(data.CommandListenChannel);
+			WaitingRoomVCContainer = new SnowflakeContainer<DiscordChannel>(data.WaitingRoomVC);
+			MemberRoleContainer = new SnowflakeContainer<DiscordRole>(data.MemberRole);
+			MutedRoleContainer = new SnowflakeContainer<DiscordRole>(data.MutedRole);
+			BotManagerRoleContainer = new SnowflakeContainer<DiscordRole>(data.MutedRole);
 
-			everyonePermission = data.EveryonePermission;
+			EveryonePermission = data.EveryonePermission;
 
-			createdChannelsContainer = new Dictionary<SnowflakeContainer<DiscordMember>, List<SnowflakeContainer<DiscordChannel>>>();
-			rolewisePermissionContainer = new Dictionary<SnowflakeContainer<DiscordRole>, VoiceChannelCreationPermissions>();
-			memberwisePermissionContainer = new Dictionary<SnowflakeContainer<DiscordMember>, VoiceChannelCreationPermissions>();
+			CreatedChannelsContainer = new Dictionary<ulong, List<SnowflakeContainer<DiscordChannel>>>();
+			RolewisePermissionContainer = new Dictionary<ulong, VoiceChannelCreationPermissions>();
+			MemberwisePermissionContainer = new Dictionary<ulong, VoiceChannelCreationPermissions>();
 
 			foreach (KeyValuePair<DiscordMember, List<DiscordChannel>> kvp in data.CreatedChannels)
 			{
-				KeyValuePair<SnowflakeContainer<DiscordMember>, List<SnowflakeContainer<DiscordChannel>>> newAdd = new KeyValuePair<SnowflakeContainer<DiscordMember>, List<SnowflakeContainer<DiscordChannel>>>(new SnowflakeContainer<DiscordMember>(kvp.Key), new List<SnowflakeContainer<DiscordChannel>>());
+				KeyValuePair<ulong, List<SnowflakeContainer<DiscordChannel>>> newAdd = new KeyValuePair<ulong, List<SnowflakeContainer<DiscordChannel>>>(kvp.Key.Id, new List<SnowflakeContainer<DiscordChannel>>());
 				foreach (DiscordChannel channel in kvp.Value)
 				{
 					newAdd.Value.Add(new SnowflakeContainer<DiscordChannel>(channel));
 				}
-				createdChannelsContainer.Add(newAdd.Key, newAdd.Value);
+				CreatedChannelsContainer.Add(newAdd.Key, newAdd.Value);
 			}
 			foreach (KeyValuePair<DiscordRole, VoiceChannelCreationPermissions> kvp in data.RolewisePermissions)
 			{
-				rolewisePermissionContainer.Add(new SnowflakeContainer<DiscordRole>(kvp.Key), kvp.Value);
+				RolewisePermissionContainer.Add(kvp.Key.Id, kvp.Value);
 			}
 			foreach (KeyValuePair<DiscordMember, VoiceChannelCreationPermissions> kvp in data.MemberwisePermissions)
 			{
-				memberwisePermissionContainer.Add(new SnowflakeContainer<DiscordMember>(kvp.Key), kvp.Value);
+				MemberwisePermissionContainer.Add(kvp.Key.Id, kvp.Value);
 			}
 		}
 
@@ -524,38 +606,36 @@ namespace NuggetOfficial.Data.VoiceModule
 
 			if (workingGuild is null) return null;
 
-			DiscordChannel parentCategory = workingGuild.GetChannel(parentCategoryContainer.ID);
-			DiscordChannel waitingRoomVC = workingGuild.GetChannel(waitingRoomVCContainer.ID);
-			DiscordChannel commandListenChannel = workingGuild.GetChannel(commandListenChannelContainer.ID);
-			DiscordRole memberRole = workingGuild.GetRole(memberRoleContainer.ID);
-			DiscordRole mutedRole = workingGuild.GetRole(mutedRoleContainer.ID);
-			DiscordRole botManagerRole = workingGuild.GetRole(botManagerRoleContainer.ID);
+			DiscordChannel parentCategory = workingGuild.GetChannel(ParentCategoryContainer.ID);
+			DiscordChannel waitingRoomVC = workingGuild.GetChannel(WaitingRoomVCContainer.ID);
+			DiscordChannel commandListenChannel = workingGuild.GetChannel(CommandListenChannelContainer.ID);
+			DiscordRole memberRole = workingGuild.GetRole(MemberRoleContainer.ID);
+			DiscordRole mutedRole = workingGuild.GetRole(MutedRoleContainer.ID);
+			DiscordRole botManagerRole = workingGuild.GetRole(BotManagerRoleContainer.ID);
 
 			Dictionary<DiscordMember, List<DiscordChannel>> createdChannels = new Dictionary<DiscordMember, List<DiscordChannel>>();
 			Dictionary<DiscordRole, VoiceChannelCreationPermissions> rolewisePermissions = new Dictionary<DiscordRole, VoiceChannelCreationPermissions>();
 			Dictionary<DiscordMember, VoiceChannelCreationPermissions> memberwisePermissions = new Dictionary<DiscordMember, VoiceChannelCreationPermissions>();
 
-			foreach (var kvp in createdChannelsContainer)
+			foreach (var kvp in CreatedChannelsContainer)
 			{
 				List<DiscordChannel> memberChannels = new List<DiscordChannel>();
 				foreach (SnowflakeContainer<DiscordChannel> channelContainer in kvp.Value)
 				{
 					memberChannels.Add(workingGuild.GetChannel(channelContainer.ID));
 				}
-				createdChannels.Add(await workingGuild.GetMemberAsync(kvp.Key.ID), memberChannels);
+				createdChannels.Add(await workingGuild.GetMemberAsync(kvp.Key), memberChannels);
 			}
-			foreach (var kvp in rolewisePermissionContainer)
+			foreach (var kvp in RolewisePermissionContainer)
 			{
-				rolewisePermissions.Add(workingGuild.GetRole(kvp.Key.ID), kvp.Value);
+				rolewisePermissions.Add(workingGuild.GetRole(kvp.Key), kvp.Value);
 			}
-			foreach (var kvp in memberwisePermissionContainer)
+			foreach (var kvp in MemberwisePermissionContainer)
 			{
-				memberwisePermissions.Add(await workingGuild.GetMemberAsync(kvp.Key.ID), kvp.Value);
+				memberwisePermissions.Add(await workingGuild.GetMemberAsync(kvp.Key), kvp.Value);
 			}
 
-
-
-			return new GuildData(parentCategory, waitingRoomVC, commandListenChannel, memberRole, mutedRole, botManagerRole, everyonePermission, rolewisePermissions, memberwisePermissions, createdChannels);
+			return new GuildData(parentCategory, waitingRoomVC, commandListenChannel, memberRole, mutedRole, botManagerRole, EveryonePermission, rolewisePermissions, memberwisePermissions, createdChannels);
 		}
 	}
 }
