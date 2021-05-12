@@ -64,7 +64,7 @@ namespace NuggetOfficial.Commands
 				goto Completed;
 			}
 
-			registeredGuildData[ctx.Guild].InitializePermissions(VoiceChannelCreationPermissions.Unauthorized, new[] { new KeyValuePair<DiscordRole, VoiceChannelCreationPermissions>(memberRole, new VoiceChannelCreationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Unauthorized, ChannelCreationQuantityAuthority.Single, ChannelAccesibilityConfigurationAuthority.Private, ChannelRegionConfigurationAuthority.Unauthorized)), new KeyValuePair<DiscordRole, VoiceChannelCreationPermissions>(mutedRole, VoiceChannelCreationPermissions.Unauthorized), new KeyValuePair<DiscordRole, VoiceChannelCreationPermissions>(botManagerRole, VoiceChannelCreationPermissions.Authorized) }, new[] { new KeyValuePair<DiscordMember, VoiceChannelCreationPermissions>(ctx.Member, VoiceChannelCreationPermissions.Authorized) });
+			registeredGuildData[ctx.Guild].InitializePermissions(VoiceChannelConfigurationPermissions.Unauthorized, new[] { new KeyValuePair<DiscordRole, VoiceChannelConfigurationPermissions>(memberRole, new VoiceChannelConfigurationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Unauthorized, ChannelCreationQuantityAuthority.Single, ChannelAccesibilityConfigurationAuthority.Private, ChannelRegionConfigurationAuthority.Unauthorized)), new KeyValuePair<DiscordRole, VoiceChannelConfigurationPermissions>(mutedRole, VoiceChannelConfigurationPermissions.Unauthorized), new KeyValuePair<DiscordRole, VoiceChannelConfigurationPermissions>(botManagerRole, VoiceChannelConfigurationPermissions.Authorized) }, new[] { new KeyValuePair<DiscordMember, VoiceChannelConfigurationPermissions>(ctx.Member, VoiceChannelConfigurationPermissions.Authorized) });
 
 			if (error == string.Empty)
 			{
@@ -97,7 +97,7 @@ namespace NuggetOfficial.Commands
 			{
 				if (ctx.Member.PermissionsIn(ctx.Channel).HasFlag(Permissions.ManageChannels) || ctx.Member.Roles.Contains(registeredGuildData[ctx.Guild].BotManagerRole))
 				{
-					await Task.Run(() => registeredGuildData[ctx.Guild].UpdatePermissions(null, new[] { new KeyValuePair<DiscordRole, VoiceChannelCreationPermissions>(role, new VoiceChannelCreationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Authorized, ChannelCreationQuantityAuthority.Single, ChannelAccesibilityConfigurationAuthority.Private, ChannelRegionConfigurationAuthority.Authorized)) }, null));
+					await Task.Run(() => registeredGuildData[ctx.Guild].UpdatePermissions(null, new[] { new KeyValuePair<DiscordRole, VoiceChannelConfigurationPermissions>(role, new VoiceChannelConfigurationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Authorized, ChannelCreationQuantityAuthority.Single, ChannelAccesibilityConfigurationAuthority.Private, ChannelRegionConfigurationAuthority.Authorized)) }, null));
 				}
 			}
 		}
@@ -109,7 +109,7 @@ namespace NuggetOfficial.Commands
 			{
 				if (ctx.Member.PermissionsIn(ctx.Channel).HasFlag(Permissions.ManageChannels) || ctx.Member.Roles.Contains(registeredGuildData[ctx.Guild].BotManagerRole))
 				{
-					await Task.Run(() => registeredGuildData[ctx.Guild].UpdatePermissions(null, null, new[] { new KeyValuePair<DiscordMember, VoiceChannelCreationPermissions>(member, new VoiceChannelCreationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Authorized, ChannelCreationQuantityAuthority.Single, ChannelAccesibilityConfigurationAuthority.Private, ChannelRegionConfigurationAuthority.Authorized)) }));
+					await Task.Run(() => registeredGuildData[ctx.Guild].UpdatePermissions(null, null, new[] { new KeyValuePair<DiscordMember, VoiceChannelConfigurationPermissions>(member, new VoiceChannelConfigurationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Authorized, ChannelCreationQuantityAuthority.Single, ChannelAccesibilityConfigurationAuthority.Private, ChannelRegionConfigurationAuthority.Authorized)) }));
 				}
 			}
 		}
@@ -117,6 +117,8 @@ namespace NuggetOfficial.Commands
 		[Command("createvcwizard")]
 		public async Task ChannelCreationWizard(CommandContext ctx)
 		{
+			CreateChannelWizard wizard = new CreateChannelWizard(ctx, registeredGuildData[ctx.Guild]);
+
 			await ctx.RespondAsync("I'm not a miracle worker this shit gonna take a while to implement");
 		}
 

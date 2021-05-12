@@ -120,35 +120,35 @@ namespace NuggetOfficial.Authority
 		Authorized
 	}
 
-	[Serializable, JsonObject]
-	public class VoiceChannelCreationPermissions
+	[JsonObject]
+	public class VoiceChannelConfigurationPermissions
 	{
-		public static VoiceChannelCreationPermissions Authorized { get => new VoiceChannelCreationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Authorized, ChannelCreationQuantityAuthority.Unlimited, ChannelAccesibilityConfigurationAuthority.Authorized, ChannelRegionConfigurationAuthority.Authorized); }
-		public static VoiceChannelCreationPermissions Unauthorized { get => new VoiceChannelCreationPermissions(); }
+		public static VoiceChannelConfigurationPermissions Authorized { get => new VoiceChannelConfigurationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Authorized, ChannelCreationQuantityAuthority.Unlimited, ChannelAccesibilityConfigurationAuthority.Authorized, ChannelRegionConfigurationAuthority.Authorized); }
+		public static VoiceChannelConfigurationPermissions Unauthorized { get => new VoiceChannelConfigurationPermissions(); }
 
 		[JsonProperty("channel_creation_authority")]
-		readonly ChannelCreationAuthority channelCreationAuthority;
+		public ChannelCreationAuthority ChannelCreationAuthority { get; private set; }
 		[JsonProperty("channel_rename_authority")]
-		readonly ChannelRenameAuthority channelRenameAuthority;
+		public ChannelRenameAuthority ChannelRenameAuthority {get; private set; }
 		[JsonProperty("channel_creation_quantity_authority")]
-		readonly ChannelCreationQuantityAuthority channelCreationQuantityAuthority;
+		public ChannelCreationQuantityAuthority ChannelCreationQuantityAuthority {get; private set; }
 		[JsonProperty("channel_accesibility_configuration_authority")]
-		readonly ChannelAccesibilityConfigurationAuthority channelAccesibilityConfigurationAuthority;
+		public ChannelAccesibilityConfigurationAuthority ChannelAccesibilityConfigurationAuthority {get; private set; }
 		[JsonProperty("channel_region_configuration_authority")]
-		readonly ChannelRegionConfigurationAuthority channelRegionConfigurationAuthority;
+		public ChannelRegionConfigurationAuthority ChannelRegionConfigurationAuthority {get; private set; }
 		[JsonProperty("channel_creation_quantity")]
-		readonly int specificChannelCreationQuantity;
+		public int SpecificChannelCreationQuantity { get; private set; }
 
 		/// <summary>
 		/// Create a default authorization scheme where the represented member or role is completely unauthorized
 		/// </summary>
-		public VoiceChannelCreationPermissions()
+		public VoiceChannelConfigurationPermissions()
 		{
-			channelCreationAuthority = ChannelCreationAuthority.Unauthorized;
-			channelRenameAuthority = ChannelRenameAuthority.Unauthorized;
-			channelCreationQuantityAuthority = ChannelCreationQuantityAuthority.None;
-			channelAccesibilityConfigurationAuthority = ChannelAccesibilityConfigurationAuthority.Unauthorized;
-			channelRegionConfigurationAuthority = ChannelRegionConfigurationAuthority.Unauthorized;
+			ChannelCreationAuthority = ChannelCreationAuthority.Unauthorized;
+			ChannelRenameAuthority = ChannelRenameAuthority.Unauthorized;
+			ChannelCreationQuantityAuthority = ChannelCreationQuantityAuthority.None;
+			ChannelAccesibilityConfigurationAuthority = ChannelAccesibilityConfigurationAuthority.Unauthorized;
+			ChannelRegionConfigurationAuthority = ChannelRegionConfigurationAuthority.Unauthorized;
 		}
 		/// <summary>
 		/// Create a custom authorization scheme
@@ -158,14 +158,14 @@ namespace NuggetOfficial.Authority
 		/// <param name="channelAccesibilityConfigurationAuthority">Represented member or role's authorization to configure a channel's accesibility</param>
 		/// <param name="channelRegionConfigurationAuthority">Represented member or role's authorization to configure a channel's voice server location</param>
 		/// <param name="specificChannelCreationQuantity">Number of channels the represented member can create. Only applies to members or roles with the <c>ChannelCreationQuantityAuthority.Specified</c> authority</param>
-		public VoiceChannelCreationPermissions(ChannelCreationAuthority channelCreationAuthority, ChannelRenameAuthority channelRenameAuthority, ChannelCreationQuantityAuthority channelCreationQuantityAuthority, ChannelAccesibilityConfigurationAuthority channelAccesibilityConfigurationAuthority, ChannelRegionConfigurationAuthority channelRegionConfigurationAuthority, int specificChannelCreationQuantity = 1)
+		public VoiceChannelConfigurationPermissions(ChannelCreationAuthority channelCreationAuthority, ChannelRenameAuthority channelRenameAuthority, ChannelCreationQuantityAuthority channelCreationQuantityAuthority, ChannelAccesibilityConfigurationAuthority channelAccesibilityConfigurationAuthority, ChannelRegionConfigurationAuthority channelRegionConfigurationAuthority, int specificChannelCreationQuantity = 1)
 		{
-			this.channelCreationAuthority = channelCreationAuthority;
-			this.channelRenameAuthority = channelRenameAuthority;
-			this.channelCreationQuantityAuthority = channelCreationQuantityAuthority;
-			this.channelAccesibilityConfigurationAuthority = channelAccesibilityConfigurationAuthority;
-			this.channelRegionConfigurationAuthority = channelRegionConfigurationAuthority;
-			this.specificChannelCreationQuantity = specificChannelCreationQuantity;
+			ChannelCreationAuthority = channelCreationAuthority;
+			ChannelRenameAuthority = channelRenameAuthority;
+			ChannelCreationQuantityAuthority = channelCreationQuantityAuthority;
+			ChannelAccesibilityConfigurationAuthority = channelAccesibilityConfigurationAuthority;
+			ChannelRegionConfigurationAuthority = channelRegionConfigurationAuthority;
+			SpecificChannelCreationQuantity = specificChannelCreationQuantity;
 		}
 
 		/// <summary>
@@ -180,34 +180,34 @@ namespace NuggetOfficial.Authority
 		{
 			error = string.Empty;
 
-			if (attemptRename && channelRenameAuthority != ChannelRenameAuthority.Authorized)
+			if (attemptRename && ChannelRenameAuthority != ChannelRenameAuthority.Authorized)
 			{
 				error = $"Member does not have the authority to rename voice channels";
 				goto RequestedParametersInvalid;
 			}
 
-			if (channelCreationAuthority == ChannelCreationAuthority.Unauthorized)
+			if (ChannelCreationAuthority == ChannelCreationAuthority.Unauthorized)
 			{
 				error = $"Member does not have the authority to create voice channels";
 				goto RequestedParametersInvalid;
 			}
 
-			if (!(channelCreationQuantityAuthority == ChannelCreationQuantityAuthority.Unlimited) && existingChannels > 0)
+			if (!(ChannelCreationQuantityAuthority == ChannelCreationQuantityAuthority.Unlimited) && existingChannels > 0)
 			{
-				if (channelCreationQuantityAuthority == ChannelCreationQuantityAuthority.Single)
+				if (ChannelCreationQuantityAuthority == ChannelCreationQuantityAuthority.Single)
 				{
 					error = "Member does not have the authority to create multiple voice channels";
 					goto RequestedParametersInvalid;
 				}
 
-				if (channelCreationQuantityAuthority == ChannelCreationQuantityAuthority.Specified && ++existingChannels > specificChannelCreationQuantity)
+				if (ChannelCreationQuantityAuthority == ChannelCreationQuantityAuthority.Specified && ++existingChannels > SpecificChannelCreationQuantity)
 				{
 					error = "Member has already created the maximum number of allowed specific channels";
 					goto RequestedParametersInvalid;
 				}
 			}
 
-			if (channelRegionConfigurationAuthority != ChannelRegionConfigurationAuthority.Authorized && requestedRegion != VoiceRegion.Automatic)
+			if (ChannelRegionConfigurationAuthority != ChannelRegionConfigurationAuthority.Authorized && requestedRegion != VoiceRegion.Automatic)
 			{
 				error = "Member does not have the authority to change the voice channel's region";
 				goto RequestedParametersInvalid;
@@ -216,7 +216,7 @@ namespace NuggetOfficial.Authority
 			switch (requestedPublicity)
 			{
 				case ChannelPublicity.Public:
-					if (!channelAccesibilityConfigurationAuthority.HasFlag(ChannelAccesibilityConfigurationAuthority.Public))
+					if (!ChannelAccesibilityConfigurationAuthority.HasFlag(ChannelAccesibilityConfigurationAuthority.Public))
 					{
 						error = "Member does not have the authority to create public voice channels";
 						goto RequestedParametersInvalid;
@@ -224,7 +224,7 @@ namespace NuggetOfficial.Authority
 					break;
 
 				case ChannelPublicity.Private:
-					if (!channelAccesibilityConfigurationAuthority.HasFlag(ChannelAccesibilityConfigurationAuthority.Private))
+					if (!ChannelAccesibilityConfigurationAuthority.HasFlag(ChannelAccesibilityConfigurationAuthority.Private))
 					{
 						error = "Member does not have the authority to create private voice channels";
 						goto RequestedParametersInvalid;
@@ -232,7 +232,7 @@ namespace NuggetOfficial.Authority
 					break;
 
 				case ChannelPublicity.Supporter:
-					if (!channelAccesibilityConfigurationAuthority.HasFlag(ChannelAccesibilityConfigurationAuthority.Supporter))
+					if (!ChannelAccesibilityConfigurationAuthority.HasFlag(ChannelAccesibilityConfigurationAuthority.Supporter))
 					{
 						error = "Member does not have the authority to create supporter-only voice channels";
 						goto RequestedParametersInvalid;
@@ -240,7 +240,7 @@ namespace NuggetOfficial.Authority
 					break;
 
 				case ChannelPublicity.Hidden:
-					if (!channelAccesibilityConfigurationAuthority.HasFlag(ChannelAccesibilityConfigurationAuthority.Hidden))
+					if (!ChannelAccesibilityConfigurationAuthority.HasFlag(ChannelAccesibilityConfigurationAuthority.Hidden))
 					{
 						error = "Member does not have the authority to create hidden voice channels";
 						goto RequestedParametersInvalid;

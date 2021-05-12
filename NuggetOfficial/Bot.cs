@@ -1,20 +1,18 @@
 ﻿using DSharpPlus;
-using System;
-using System.Threading.Tasks;
-using System.Configuration;
-using System.Collections.Specialized;
 using DSharpPlus.CommandsNext;
-using System.Reflection;
-using NuggetOfficial.Commands;
 using DSharpPlus.EventArgs;
-using NuggetOfficial.Actions;
-using NuggetOfficial.Data.Converters;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Enums;
+using DSharpPlus.Interactivity.Extensions;
 using Microsoft.Extensions.DependencyInjection;
-using DSharpPlus.Entities;
-using System.Linq;
-using NuggetOfficial.Data.VoiceModule;
-using NuggetOfficial.Actions.Serialization;
 using Microsoft.Extensions.Logging;
+using NuggetOfficial.Actions.Serialization;
+using NuggetOfficial.Commands;
+using NuggetOfficial.Data.Converters;
+using NuggetOfficial.Data.VoiceModule;
+using System;
+using System.Configuration;
+using System.Threading.Tasks;
 
 namespace NuggetOfficial
 {
@@ -43,11 +41,17 @@ namespace NuggetOfficial
 
 			IServiceCollection services = new ServiceCollection().AddSingleton(guildDataReference);
 
-			CommandsNextExtension commands = discord.UseCommandsNext(new CommandsNextConfiguration()
+			CommandsNextExtension commands = discord.UseCommandsNext(new CommandsNextConfiguration
 			{
 				StringPrefixes = new[] { "!" },
 				EnableMentionPrefix = false,
 				Services = services.BuildServiceProvider()
+			});
+
+			discord.UseInteractivity(new InteractivityConfiguration
+			{
+				PollBehaviour = PollBehaviour.DeleteEmojis,
+				Timeout = TimeSpan.FromSeconds(30)
 			});
 
 			//discord.GuildMemberAdded += MemberValidation.TrackMemberJoinGuild;
