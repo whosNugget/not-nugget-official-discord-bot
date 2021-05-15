@@ -1,6 +1,9 @@
 ﻿using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Enums;
+using DSharpPlus.Interactivity.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NuggetOfficial.Actions.Serialization;
@@ -8,6 +11,7 @@ using NuggetOfficial.Bot;
 using NuggetOfficial.Commands;
 using NuggetOfficial.Data.Converters;
 using NuggetOfficial.Data.VoiceModule;
+using System;
 using System.Threading.Tasks;
 
 namespace NuggetOfficial
