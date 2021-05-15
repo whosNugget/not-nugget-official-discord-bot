@@ -3,163 +3,255 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using NuggetOfficial.Data;
+using NuggetOfficial.Authority;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NuggetOfficial.Data.VoiceModule;
+using NuggetOfficial.Actions.Serialization;
 
 namespace NuggetOfficial.Commands
 {
 	public class VoiceChannelModule : BaseCommandModule
 	{
-		//TODO this should reference a database (or databases) for efficient and lightweight data storage for all this information. This is IMPERATIVE if this bot will
-		//ever be sharded and publically released (which is a possibility, though I think it will always be a mini passion project that will only ever be used in my server
-		//and maybe some friend's servers if they ask. If this bot is going to be in multiple servers, however, it is also required to use an external method of storing data,
-		//as the bot currently stores information for a single registerred guild, and it has no capability of holding information on multiple servers at the moment.
-		//When the time to convert this bot to a database instance, this class will need a massive refactor. It will be a fun development challenge, though :)
+		//TODO full conversion from responding with messages to responding with embeds required (40% done)
 
-		readonly DiscordGuild registeredGuild = null;
-		readonly DiscordRole memberRole = null;
-		readonly DiscordRole mutedRole = null;
-
-		DiscordChannel parentCategory = null;
-		DiscordChannel waitingRoomVC = null;
-
-		Dictionary<DiscordMember, DiscordChannel> createdChannels = new Dictionary<DiscordMember, DiscordChannel>();
-
-		public VoiceChannelModule(DiscordGuild registeredGuild)
+		enum MessageType
 		{
-			if (registeredGuild.Id != 0)
+			Error,
+			Warning,
+			Success,
+			Notification,
+		}
+
+		readonly VoiceRegisteredGuildData registeredGuildData;
+
+		public VoiceChannelModule(VoiceRegisteredGuildData registeredGuildData)
+		{
+			this.registeredGuildData = registeredGuildData;
+		}
+
+		public override async Task BeforeExecutionAsync(CommandContext ctx)
+		{
+			if (registeredGuildData.Rebuilding)
 			{
-				this.registeredGuild = registeredGuild;
-
-				if (ConfigurationManager.AppSettings.AllKeys.Contains("parentCategoryID")) parentCategory = this.registeredGuild.GetChannel(ulong.Parse(ConfigurationManager.AppSettings.Get("parentCategoryID")));
-				if (ConfigurationManager.AppSettings.AllKeys.Contains("waitingRoomVCID")) waitingRoomVC = this.registeredGuild.GetChannel(ulong.Parse(ConfigurationManager.AppSettings.Get("waitingRoomVCID")));
-				if (ConfigurationManager.AppSettings.AllKeys.Contains("memberRole")) memberRole = this.registeredGuild.GetRole(ulong.Parse(ConfigurationManager.AppSettings.Get("memberRole")));
-				if (ConfigurationManager.AppSettings.AllKeys.Contains("mutedRole")) mutedRole = this.registeredGuild.GetRole(ulong.Parse(ConfigurationManager.AppSettings.Get("mutedRole")));
-
-				registeredGuild.GetChannel(832686904066834443).SendMessageAsync($"Registered this server's parent category to {parentCategory.Name}, waiting room to {waitingRoomVC.Name}, member role to {memberRole.Mention}, and muted role to {mutedRole.Mention}");
+				throw new Exception("Cancel execution of command - VoiceRegisteredGuildData is rebuilding from file");
 			}
+
+			await ctx.TriggerTypingAsync();
+		}
+
+		[Command("testserialize")]
+		public async Task TestSerialize(CommandContext ctx)
+		{
+			SerializationResult result = Serializer.Serialize("Data/Voice/GuildData/guild_data.json", registeredGuildData);
+			MessageType messageType = result.Success ? MessageType.Success : MessageType.Error;
+			await ctx.RespondAsync(CreateEmbedMessage(ctx, messageType, "Serialization Output", new List<KeyValuePair<string, string>>(new[] { new KeyValuePair<string, string>("JSON result", $"{(result.Success ? "Success" : "Error: ")}{result.ErrorMessage}") })));
 		}
 
 		[Command("registerguild")]
-		public async Task RegisterGuild(CommandContext ctx, DiscordChannel parentCategory, DiscordChannel waitingRoomVC, DiscordRole memberRole, DiscordRole mutedRole)
+		public async Task RegisterGuild(CommandContext ctx, DiscordChannel parentCategory, DiscordChannel waitingRoomVC, DiscordChannel commandListenChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole)
 		{
-			if (this.parentCategory is null || this.waitingRoomVC is null)
+			MessageType messageType = MessageType.Success;
+			List<KeyValuePair<string, string>> embedContent = new List<KeyValuePair<string, string>>();
+
+			if (!registeredGuildData.RegisterGuild(ctx.Guild, parentCategory, waitingRoomVC, commandListenChannel, memberRole, mutedRole, botManagerRole, out string error))
 			{
-				this.parentCategory = parentCategory;
-				this.waitingRoomVC = waitingRoomVC;
-
-				ConfigurationManager.AppSettings.Set("parentCategoryID", parentCategory.Id.ToString());
-				ConfigurationManager.AppSettings.Set("waitingRoomVCID", waitingRoomVC.Id.ToString());
-				ConfigurationManager.AppSettings.Set("memberRole", memberRole.Id.ToString());
-				ConfigurationManager.AppSettings.Set("mutedRole", mutedRole.Id.ToString());
-
-				await RespondAsync(ctx.Message, $"``Registered this server's parent category to {parentCategory.Name}, waiting room to {waitingRoomVC}, member role to {memberRole.Mention}, and muted role to {mutedRole.Mention}``");
+				await ctx.Message.RespondAsync(error);
+				goto Completed;
 			}
-			else
+
+			registeredGuildData[ctx.Guild].InitializePermissions(VoiceChannelCreationPermissions.Unauthorized, new[] { new KeyValuePair<DiscordRole, VoiceChannelCreationPermissions>(memberRole, new VoiceChannelCreationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Unauthorized, ChannelCreationQuantityAuthority.Single, ChannelAccesibilityConfigurationAuthority.Private, ChannelRegionConfigurationAuthority.Unauthorized)), new KeyValuePair<DiscordRole, VoiceChannelCreationPermissions>(mutedRole, VoiceChannelCreationPermissions.Unauthorized), new KeyValuePair<DiscordRole, VoiceChannelCreationPermissions>(botManagerRole, VoiceChannelCreationPermissions.Authorized) }, new[] { new KeyValuePair<DiscordMember, VoiceChannelCreationPermissions>(ctx.Member, VoiceChannelCreationPermissions.Authorized) });
+
+			if (error == string.Empty)
 			{
-				await RespondAsync(ctx.Message, "``This server is already registered``");
+				embedContent.AddRange(new[]
+				{
+					new KeyValuePair<string, string>("Guild", $"{ctx.Guild.Name} - {ctx.Guild.Id}"),
+					new KeyValuePair<string, string>("Parent Category", $"{parentCategory?.Mention ?? "null"} - {parentCategory?.Id}"),
+					new KeyValuePair<string, string>("Waiting Room VC", $"{waitingRoomVC?.Mention ?? "null"} - {waitingRoomVC?.Id}"),
+					new KeyValuePair<string, string>("Command Listen Channel", $"{commandListenChannel?.Mention ?? "null"} - {waitingRoomVC?.Id}"),
+					new KeyValuePair<string, string>("Member Role", $"{memberRole.Mention} - {memberRole?.Id}"),
+					new KeyValuePair<string, string>("Muted Role", $"{mutedRole.Mention} - {mutedRole.Id}"),
+					new KeyValuePair<string, string>("Bot Manager Role", $"{botManagerRole.Mention} - {botManagerRole.Id}")
+				});
+				goto Completed;
+			}
+
+			embedContent.Add(new KeyValuePair<string, string>("Error", error));
+
+		Completed:
+			await ctx.Message.RespondAsync(CreateEmbedMessage(ctx, messageType, $"Registering guild \"{ctx.Guild.Name}\" ({ctx.Guild.Id})", embedContent));
+			return;
+		}
+
+		//TODO this command should only be allowed to be called by people with Admin powers or bot-master roles
+		[Command("permit")]
+		public async Task Permit(CommandContext ctx, DiscordRole role) //TODO more complex/more options
+		{
+			//TODO allow server owners to specify moderator roles/members that can utilize these commands
+			if (ValidateServerRegistered(ctx))
+			{
+				if (ctx.Member.PermissionsIn(ctx.Channel).HasFlag(Permissions.ManageChannels) || ctx.Member.Roles.Contains(registeredGuildData[ctx.Guild].BotManagerRole))
+				{
+					await Task.Run(() => registeredGuildData[ctx.Guild].UpdatePermissions(null, new[] { new KeyValuePair<DiscordRole, VoiceChannelCreationPermissions>(role, new VoiceChannelCreationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Authorized, ChannelCreationQuantityAuthority.Single, ChannelAccesibilityConfigurationAuthority.Private, ChannelRegionConfigurationAuthority.Authorized)) }, null));
+				}
+			}
+		}
+		[Command("permit")]
+		public async Task Permit(CommandContext ctx, DiscordMember member) //TODO more complex/more options
+		{
+			//TODO allow server owners to specify moderator roles/members that can utilize these commands
+			if (ValidateServerRegistered(ctx))
+			{
+				if (ctx.Member.PermissionsIn(ctx.Channel).HasFlag(Permissions.ManageChannels) || ctx.Member.Roles.Contains(registeredGuildData[ctx.Guild].BotManagerRole))
+				{
+					await Task.Run(() => registeredGuildData[ctx.Guild].UpdatePermissions(null, null, new[] { new KeyValuePair<DiscordMember, VoiceChannelCreationPermissions>(member, new VoiceChannelCreationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Authorized, ChannelCreationQuantityAuthority.Single, ChannelAccesibilityConfigurationAuthority.Private, ChannelRegionConfigurationAuthority.Authorized)) }));
+				}
 			}
 		}
 
-		//TODO write every other method parameter combination. If not all of them, at least the all default one (probably wont do)
+		[Command("createvcwizard")]
+		public async Task ChannelCreationWizard(CommandContext ctx)
+		{
+			await ctx.RespondAsync("I'm not a miracle worker this shit gonna take a while to implement");
+		}
+
+		[Command("checkperms")] //This command will outline a member's permissions neatly in an embed
+		public async Task CheckMemberPermissions(CommandContext ctx)
+		{
+			await RespondAsync(ctx.Message, "NYI");
+		}
+
+		//TODO create version for rename
 		[Command("createvc")]
 		public async Task CreateVC(CommandContext ctx, ChannelPublicity publicity = ChannelPublicity.Public, int? maxUsers = 0, int? bitrate = 64000, VoiceRegion region = VoiceRegion.Automatic, params DiscordMember[] permittedMembers)
 		{
-			if (!(ctx.Member.VoiceState is null) && !(ctx.Member.VoiceState.Channel is null) && ctx.Member.VoiceState.Channel.Equals(waitingRoomVC))
-			{
-				//in waiting room vc
-				if (ValidateVCParameterInput(out string error, publicity, maxUsers, bitrate, region, permittedMembers))
-				{
-					//input valid
-					if (!createdChannels.ContainsKey(ctx.Member) || (createdChannels.ContainsKey(ctx.Member) && createdChannels[ctx.Member] is null))
-					{
-						//member does not own a VC
-						List<DiscordOverwriteBuilder> channelPermissionsBuilderList = GeneratePermissionOverwrites(ctx.Member, publicity, permittedMembers);
-						await CreateChannelAndMoveMemberAsync(ctx.Member, maxUsers, bitrate, region, channelPermissionsBuilderList);
+			List<KeyValuePair<string, string>> embedResponseFields = new List<KeyValuePair<string, string>>(10);
+			MessageType messageType = MessageType.Success;
+			string warning = string.Empty;
 
-						if ((publicity == ChannelPublicity.Private || publicity == ChannelPublicity.Hidden) && permittedMembers?.Length == 0)
-						{
-							//member created a private VC with no allowed members
-							await RespondAsync(ctx.Message, "``You've created a private channel but you haven't allowed members to join. Be sure to update the vc with a list of allowed members, else only you will be allowed to join``");
-						}
-					}
-					else
-					{
-						//member already owns a VC
-						await RespondAsync(ctx.Message, "``You need to delete your previously created channel before creating a new one``");
-					}
-				}
-				else
-				{
-					//input invalid
-					await RespondAsync(ctx.Message, error);
-				}
-			}
-			else
+			if (ValidateServerRegistered(ctx) && ValidateCommandChannel(ctx))
 			{
-				//creator not in the waiting room
-				await RespondAsync(ctx.Message, $"``You cannot create a voice channel if you arent in the waiting room: {waitingRoomVC.Name}``");
-			}
+				if (!ValidateVCParameterInput(ctx.Guild, publicity, maxUsers, bitrate, region, out string error)) //ensure the provided parameters arent shite
+				{
+					messageType = MessageType.Error;
+					goto Completed;
+				}
 
-			//dev message
-			await RespondAsync(ctx.Message, $"``publicity: {publicity}, maxUsers: {maxUsers}, bitrate: {bitrate}, region: {region}``");
+				if (!ValidateMemberCreationPermissions(ctx.Guild, ctx.Member, null, publicity, region, out error)) //TODO implement channel name
+				{
+					messageType = MessageType.Error;
+					goto Completed;
+				}
+
+				if (ctx.Member.VoiceState is null || ctx.Member.VoiceState.Channel is null || !ctx.Member.VoiceState.Channel.Equals(registeredGuildData[ctx.Guild].WaitingRoomVC)) //ensure the member is in the waiting room
+				{
+					error = $"``You cannot create a voice channel if you arent in the waiting room: {registeredGuildData[ctx.Guild].WaitingRoomVC.Name}``";
+					messageType = MessageType.Error;
+					goto Completed;
+				}
+
+				List<DiscordOverwriteBuilder> channelPermissionsBuilderList = GeneratePermissionOverwrites(ctx.Guild, ctx.Member, publicity, permittedMembers);
+				DiscordChannel createdChannel = await CreateChannelAndMoveMemberAsync(ctx.Guild, ctx.Member, maxUsers, bitrate, region, channelPermissionsBuilderList);
+				embedResponseFields.Add(new KeyValuePair<string, string>("Channel Publicity", publicity.ToString()));
+				embedResponseFields.Add(new KeyValuePair<string, string>("Max Users", maxUsers.ToString()));
+				embedResponseFields.Add(new KeyValuePair<string, string>("Bitrate", bitrate.ToString()));
+				embedResponseFields.Add(new KeyValuePair<string, string>("Region", region.ToString()));
+				embedResponseFields.Add(new KeyValuePair<string, string>("Permitted Members", $"{permittedMembers?.Length ?? 0} members permitted"));
+
+				if (permittedMembers is null || permittedMembers.Length == 0)
+				{
+					warning = $"You have created a private voice channel but have not specified anyone permitted to join. Be sure to whitelist members you want to have access to it";
+					messageType = MessageType.Warning;
+					goto Completed;
+				}
+
+				if (permittedMembers.Length > 0)
+				{
+					await AttemptInformPermittedMembersDirectly(ctx.Member, createdChannel, permittedMembers);
+					goto Completed;
+				}
+
+			Completed:
+				if (error != string.Empty) embedResponseFields.Add(new KeyValuePair<string, string>("Error", error));
+				if (warning != string.Empty) embedResponseFields.Add(new KeyValuePair<string, string>("Warning", warning));
+
+				await ctx.Message.RespondAsync(CreateEmbedMessage(ctx, messageType, "Member Create Voice Channel", embedResponseFields));
+			}
 		}
 
+		//TODO implement
+		//TODO add overloads for every single param combo
 		[Command("updatevc")]
 		public async Task UpdateVC(CommandContext ctx, ChannelPublicity publicity = ChannelPublicity.Public, int? maxUsers = 0, int? bitrate = 64000, VoiceRegion region = VoiceRegion.Automatic)
 		{
-
-		}
-		[Command("updatevc")]
-		public async Task UpdateVC(CommandContext ctx, bool permit, params DiscordMember[] memberList)
-		{ 
-
+			await RespondAsync(ctx.Message, "NYI");
 		}
 
+		//TODO implement
+		[Command("whitelist")]
+		public async Task Whitelist(CommandContext ctx, params DiscordMember[] memberList)
+		{
+			await RespondAsync(ctx.Message, "NYI");
+		}
+
+		//TODO extrapolate this so the owner can specify an ID or Name (probably not) to delete instead of be in the vc (for convinence)
 		[Command("deletevc")]
 		public async Task DeleveVC(CommandContext ctx)
 		{
-			if (createdChannels.ContainsKey(ctx.Member) && !(createdChannels[ctx.Member] is null))
+			if (ValidateServerRegistered(ctx))
 			{
-				//member has a channel
+				if (!(registeredGuildData[ctx.Guild]?[ctx.Member] is null) || registeredGuildData[ctx.Guild][ctx.Member].Count == 0)
+				{
+					await RespondAsync(ctx.Message, "``You need to create a VC to delete one``");
+					return;
+				}
+
 				try
 				{
-					DiscordChannel toDelete = createdChannels[ctx.Member];
+					DiscordChannel toDelete = registeredGuildData[ctx.Guild][ctx.Member].Count == 1 ? registeredGuildData[ctx.Guild][ctx.Member][0] : ctx.Member.VoiceState?.Channel;
+					if (toDelete is null)
+					{
+						await RespondAsync(ctx.Message, $"``Because you have multiple created channels, you must be in the VC you wish to delete``");
+						return;
+					}
+
+					if (!registeredGuildData[ctx.Guild][ctx.Member].Contains(toDelete))
+					{
+						await RespondAsync(ctx.Message, $"``You are in a VC you do not own and, therefore, cannot delete it``");
+						return;
+					}
+
 					await toDelete.DeleteAsync($"{ctx.Member.DisplayName}#{ctx.Member.Discriminator}:{ctx.Member.Id} requested to delete their created channel: {toDelete.Name}:{toDelete.Id}");
-					createdChannels[ctx.Member] = null;
+					registeredGuildData[ctx.Guild].RemoveChannel(ctx.Member, toDelete);
 					await RespondAsync(ctx.Message, $"``Deleted channel {toDelete.Name}``");
 				}
-				catch(Exception e)
+				catch (Exception e)
 				{
 					await RespondAsync(ctx.Message, $"``{e}``");
 				}
 			}
-			else
-			{
-				//member doesnt have a channel
-				await RespondAsync(ctx.Message, "``You need to create a VC to delete one``");
-			}
 		}
 
 		#region Asynchronous Private Methods
+		//TODO remove, change with more dynamic embed system
 		async Task RespondAsync(DiscordMessage responseEntity, string message)
 		{
 			await responseEntity.RespondAsync(message);
 		}
 
-		async Task<DiscordChannel> CreateChannelAndMoveMemberAsync(DiscordMember channelCreator, int? maxUsers, int? bitrate, VoiceRegion region/*TODO not yet supported by D#+ but will be soon (hopefully)*/, IEnumerable<DiscordOverwriteBuilder> permissions)
+		//TODO thinking this should be moved to the GuildData class
+		async Task<DiscordChannel> CreateChannelAndMoveMemberAsync(DiscordGuild guild, DiscordMember channelCreator, int? maxUsers, int? bitrate, VoiceRegion region/*TODO not yet supported by D#+ but will be soon (hopefully)*/, IEnumerable<DiscordOverwriteBuilder> permissions)
 		{
 			DiscordChannel createdChannel = null;
 			try
 			{
-				createdChannel = await registeredGuild.CreateVoiceChannelAsync(channelCreator.Nickname ?? $"{channelCreator.DisplayName}'s VC", parentCategory, bitrate, maxUsers, permissions, $"Channel created via command by member {channelCreator.DisplayName}#{channelCreator.Discriminator}:{channelCreator.Id}");
-
-				if (createdChannels.ContainsKey(channelCreator)) createdChannels[channelCreator] = createdChannel;
-				else createdChannels.Add(channelCreator, createdChannel);
+				createdChannel = await guild.CreateVoiceChannelAsync(channelCreator.Nickname ?? $"{channelCreator.DisplayName}'s VC", registeredGuildData[guild].ParentCategory, bitrate, maxUsers, permissions, $"Channel created via command by member {channelCreator.DisplayName}#{channelCreator.Discriminator}:{channelCreator.Id}");
+				registeredGuildData[guild].AddChannel(channelCreator, createdChannel); //Add the channel to the registerred guild's data container
 			}
 			catch (Exception)
 			{
@@ -171,56 +263,127 @@ namespace NuggetOfficial.Commands
 
 			return createdChannel;
 		}
+
+		//TODO needs thorough testing
+		async Task AttemptInformPermittedMembersDirectly(DiscordMember channelCreator, DiscordChannel createdVoiceChannel, IEnumerable<DiscordMember> permittedAndAuthorizedMembers)
+		{
+			DiscordInvite newInvite = await createdVoiceChannel.CreateInviteAsync();
+			foreach (DiscordMember member in permittedAndAuthorizedMembers)
+			{
+				DiscordDmChannel currentMemberDm;
+				try { currentMemberDm = await member.CreateDmChannelAsync(); }
+				catch (Exception) { continue; }
+
+				if (currentMemberDm is null) continue;
+
+				await currentMemberDm.SendMessageAsync($"You were whitelisted to join a VC by {channelCreator.Nickname ?? channelCreator.DisplayName} in {createdVoiceChannel.Guild.Name}. Click this link to immediately join the channel: {newInvite}");
+			}
+		}
 		#endregion
+
 		#region Synchronous Private Methods
-		bool ValidateVCParameterInput(out string error, ChannelPublicity publicity, int? maxUsers, int? bitrate, VoiceRegion region, params DiscordMember[] permittedMembers)
+		DiscordEmbed CreateEmbedMessage(CommandContext ctx, MessageType type, string title, List<KeyValuePair<string, string>> fields)
+		{
+			DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+
+			embed.WithTitle(title);
+			embed.WithDescription($"{ctx.Prefix}{ctx.Command.Name} invoked by {ctx.Member.DisplayName}#{ctx.Member.Discriminator}");
+			embed.WithThumbnail(ctx.Member.AvatarUrl);
+
+			if (!(fields is null))
+				foreach (var kvp in fields)
+					embed.AddField(kvp.Key, kvp.Value);
+
+			switch (type)
+			{
+				case MessageType.Error:
+					embed.WithColor(DiscordColor.Red);
+					break;
+				case MessageType.Warning:
+					embed.WithColor(DiscordColor.Orange);
+					break;
+				case MessageType.Success:
+					embed.WithColor(DiscordColor.Green);
+					break;
+				case MessageType.Notification:
+					embed.WithColor(DiscordColor.Blue);
+					break;
+			}
+
+			embed.WithFooter(type.ToString());
+
+			return embed.Build();
+		}
+
+		bool ValidateServerRegistered(CommandContext ctx)
+		{
+			return !(registeredGuildData[ctx.Guild] is null);
+		}
+
+		bool ValidateCommandChannel(CommandContext ctx)
+		{
+			return registeredGuildData[ctx.Guild].CommandListenChannel.Equals(ctx.Channel);
+		}
+
+		bool ValidateVCParameterInput(DiscordGuild guild, ChannelPublicity publicity, int? maxUsers, int? bitrate, VoiceRegion region, out string error)
 		{
 			error = string.Empty;
 
-			//TODO need to research how to limit this if clutter, if possible
-			if (parentCategory is null || waitingRoomVC is null)
+			if (registeredGuildData[guild] is null || registeredGuildData[guild].ParentCategory is null || registeredGuildData[guild].WaitingRoomVC is null || registeredGuildData[guild].CommandListenChannel is null)
 			{
-				error = $"``Be sure to have an admin set the parent category and the waiting room vc before using this command``";
+				error = $"``Be sure to have an admin set the parent category, waiting room vc and the command channel before using this command``";
+				goto Completed;
 			}
 			if (publicity == ChannelPublicity.Unknown)
 			{
 				error = "``The publicity option you selected is not supported. Available options are: public|private|supporter|hidden``";
+				goto Completed;
 			}
 			if (maxUsers < 0 || maxUsers > 99)
 			{
 				error = "``You cannot create a channel with a limit less than 0 or larger than 99 people``";
+				goto Completed;
 			}
 			if (bitrate < 8000 || bitrate > 96000)
 			{
 				error = "``You cannot create a channel with a bitrate less than 8kbps or larger than 96kbps``";
+				goto Completed;
 			}
 			if (region == VoiceRegion.Unknown)
 			{
 				error = "``The region option you selected is not supported. Available options are: auto|automatic|brazil|europe|hongkong|india|japan|russia|singapore|southafrica|sydney|uscentral|useast|ussouth|uswest``";
+				goto Completed;
 			}
 
-			return error.Equals(string.Empty);
+		Completed:
+			return error == string.Empty;
 		}
 
-		List<DiscordOverwriteBuilder> GeneratePermissionOverwrites(DiscordMember channelCreator, ChannelPublicity publicity, params DiscordMember[] permittedMembers)
+		//TODO need a better way to store/specify permissions, and preferably one where no permissions is left out (because of my OCD)
+		List<DiscordOverwriteBuilder> GeneratePermissionOverwrites(DiscordGuild guild, DiscordMember creator, ChannelPublicity publicity, params DiscordMember[] permittedMembers)
 		{
 			//TODO implement the ranking method that allows moderators to specify what roles have access to naming capabilities, publicity options, and bitrate options
 			List<DiscordOverwriteBuilder> channelPermissionsBuilderList = new List<DiscordOverwriteBuilder>
 			{
-				new DiscordOverwriteBuilder().For(registeredGuild.EveryoneRole).Deny(Permissions.AccessChannels | Permissions.UseVoice), //Prevent everyone from viewing any channel
-				new DiscordOverwriteBuilder().For(memberRole).Allow(publicity == ChannelPublicity.Hidden ? Permissions.None : Permissions.AccessChannels).Deny(publicity == ChannelPublicity.Private ? Permissions.UseVoice : Permissions.None).Deny(publicity == ChannelPublicity.Hidden ? Permissions.AccessChannels : Permissions.None), //Allow members to see private channels
-				new DiscordOverwriteBuilder().For(mutedRole).Allow(publicity == ChannelPublicity.Hidden ? Permissions.None : Permissions.AccessChannels).Deny(Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection | Permissions.Stream) //Dissallow muted members from accessing or viewing
+				new DiscordOverwriteBuilder().For(guild.EveryoneRole).Deny(Permissions.AccessChannels | Permissions.UseVoice), //Prevent everyone from viewing any channel
+				new DiscordOverwriteBuilder().For(registeredGuildData[guild].MemberRole).Allow(publicity == ChannelPublicity.Hidden ? Permissions.None : Permissions.AccessChannels).Deny(publicity == ChannelPublicity.Private ? Permissions.UseVoice : Permissions.None).Deny(publicity == ChannelPublicity.Hidden ? Permissions.AccessChannels : Permissions.None), //Allow members to see private channels
+				new DiscordOverwriteBuilder().For(registeredGuildData[guild].MutedRole).Allow(publicity == ChannelPublicity.Hidden ? Permissions.None : Permissions.AccessChannels).Deny(Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection | Permissions.Stream) //Dissallow muted members from accessing or viewing
 			};
 
+			//TODO this might be redundant...need to test if the muted role overwrite will disallow the muted role from joining even if this allows them...though i think i know the behavior that the role system will produce
+			//TODO may need to accomodate other blacklist roles
 			foreach (var member in permittedMembers)
 			{
-				//TODO this might be redundant...need to test if the muted role overwrite will disallow the muted role from joining even if this allows them...though i think i know the behavior that the role system will produce
-				//TODO may need to accomodate other blacklist roles
-				if (member.Roles.Contains(mutedRole)) continue; //TODO we want to inform the creator this memvber was not whitelisted in the vc because they have the muted role
+				if (member.Roles.Contains(registeredGuildData[guild].MutedRole)) continue; //TODO we want to inform the creator this member was not whitelisted in the vc because they have the muted role
 				channelPermissionsBuilderList.Add(new DiscordOverwriteBuilder().For(member).Allow(Permissions.AccessChannels | Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection | Permissions.Stream));
 			}
 
 			return channelPermissionsBuilderList;
+		}
+
+		bool ValidateMemberCreationPermissions(DiscordGuild guild, DiscordMember member, string channelName, ChannelPublicity requestedPublicity, VoiceRegion requestedRegion, out string error)
+		{
+			return registeredGuildData[guild].CheckPermission(member, channelName, requestedPublicity, requestedRegion, out error);
 		}
 		#endregion
 	}
