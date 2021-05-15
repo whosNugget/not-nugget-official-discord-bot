@@ -18,7 +18,6 @@ namespace NuggetOfficial
 {
 	class Bot
 	{
-		static bool deserializationSuccess = false;
 		static VoiceRegisteredGuildData guildDataReference = null;
 
 		static void Main()
@@ -78,7 +77,7 @@ namespace NuggetOfficial
 
 		static async Task AttemptRebuildVoiceRegisteredGuildDataAsync(DiscordClient client)
 		{
-			string error = string.Empty;
+			string error;
 			if ((error = await guildDataReference.RebuildDeserializedDataFromClient(client)) == string.Empty)
 			{
 				client.Logger.Log(LogLevel.Information, "Data deserialized from disk");

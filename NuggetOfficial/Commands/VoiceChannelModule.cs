@@ -118,8 +118,8 @@ namespace NuggetOfficial.Commands
 		public async Task ChannelCreationWizard(CommandContext ctx)
 		{
 			CreateChannelWizard wizard = new CreateChannelWizard(ctx, registeredGuildData[ctx.Guild]);
-
-			await ctx.RespondAsync("I'm not a miracle worker this shit gonna take a while to implement");
+			VoiceChannelCreationData data = await wizard.CreateResponseMessage();
+			await CreateChannelAndMoveMemberAsync(ctx.Guild, ctx.Member, data.UserLimit, 96000, data.SelectedRegion, null);
 		}
 
 		[Command("checkperms")] //This command will outline a member's permissions neatly in an embed
@@ -247,6 +247,7 @@ namespace NuggetOfficial.Commands
 		}
 
 		//TODO thinking this should be moved to the GuildData class
+		//TODO also, needs support to be passed the channel name
 		async Task<DiscordChannel> CreateChannelAndMoveMemberAsync(DiscordGuild guild, DiscordMember channelCreator, int? maxUsers, int? bitrate, VoiceRegion region/*TODO not yet supported by D#+ but will be soon (hopefully)*/, IEnumerable<DiscordOverwriteBuilder> permissions)
 		{
 			DiscordChannel createdChannel = null;
