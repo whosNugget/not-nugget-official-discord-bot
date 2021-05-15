@@ -47,7 +47,7 @@ namespace NuggetOfficial.Commands
 		[Command("testserialize")]
 		public async Task TestSerialize(CommandContext ctx)
 		{
-			SerializationResult result = Serializer.Serialize(ConfigurationManager.AppSettings.Get("voiceDataPath"), registeredGuildData);
+			SerializationResult result = Serializer.Serialize("Data/Voice/GuildData/guild_data.json", registeredGuildData);
 			MessageType messageType = result.Success ? MessageType.Success : MessageType.Error;
 			await ctx.RespondAsync(CreateEmbedMessage(ctx, messageType, "Serialization Output", new List<KeyValuePair<string, string>>(new[] { new KeyValuePair<string, string>("JSON result", $"{(result.Success ? "Success" : "Error: ")}{result.ErrorMessage}") })));
 		}
