@@ -72,7 +72,7 @@ namespace NuggetOfficial
 			commands.RegisterCommands<VoiceChannelModule>();
 			commands.RegisterConverter(new ServerRegionConverter());
 			commands.RegisterConverter(new ChannelPublicityConverter());
-			commands.RegisterConverter(new PermitDenyStringToBoolConverter());
+			commands.RegisterConverter(new PermitDenyStringConverter());
 
 			await discord.ConnectAsync();
 			//TODO figure out why this isnt authenticated and fix it

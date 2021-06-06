@@ -64,7 +64,7 @@ namespace NuggetOfficial.Commands
 				goto Completed;
 			}
 
-			registeredGuildData[ctx.Guild].InitializePermissions(VoiceChannelConfigurationPermissions.Unauthorized, new[] { new KeyValuePair<DiscordRole, VoiceChannelConfigurationPermissions>(memberRole, new VoiceChannelConfigurationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Unauthorized, ChannelCreationQuantityAuthority.Single, ChannelAccesibilityConfigurationAuthority.Private, ChannelRegionConfigurationAuthority.Unauthorized)), new KeyValuePair<DiscordRole, VoiceChannelConfigurationPermissions>(mutedRole, VoiceChannelConfigurationPermissions.Unauthorized), new KeyValuePair<DiscordRole, VoiceChannelConfigurationPermissions>(botManagerRole, VoiceChannelConfigurationPermissions.Authorized) }, new[] { new KeyValuePair<DiscordMember, VoiceChannelConfigurationPermissions>(ctx.Member, VoiceChannelConfigurationPermissions.Authorized) });
+			registeredGuildData[ctx.Guild].InitializePermissions(VoiceChannelConfigurationPermissions.Unauthorized, new[] { new KeyValuePair<DiscordRole, VoiceChannelConfigurationPermissions>(memberRole, new VoiceChannelConfigurationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Unauthorized, ChannelCreationQuantityAuthority.Single, ChannelAccesibilityConfigurationAuthority.Private, ChannelRegionConfigurationAuthority.Unauthorized, ChannelBitrateConfigurationAuthority.Unaurhotized)), new KeyValuePair<DiscordRole, VoiceChannelConfigurationPermissions>(mutedRole, VoiceChannelConfigurationPermissions.Unauthorized), new KeyValuePair<DiscordRole, VoiceChannelConfigurationPermissions>(botManagerRole, VoiceChannelConfigurationPermissions.Authorized) }, new[] { new KeyValuePair<DiscordMember, VoiceChannelConfigurationPermissions>(ctx.Member, VoiceChannelConfigurationPermissions.Authorized) });
 
 			if (error == string.Empty)
 			{
@@ -97,7 +97,7 @@ namespace NuggetOfficial.Commands
 			{
 				if (ctx.Member.PermissionsIn(ctx.Channel).HasFlag(Permissions.ManageChannels) || ctx.Member.Roles.Contains(registeredGuildData[ctx.Guild].BotManagerRole))
 				{
-					await Task.Run(() => registeredGuildData[ctx.Guild].UpdatePermissions(null, new[] { new KeyValuePair<DiscordRole, VoiceChannelConfigurationPermissions>(role, new VoiceChannelConfigurationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Authorized, ChannelCreationQuantityAuthority.Single, ChannelAccesibilityConfigurationAuthority.Private, ChannelRegionConfigurationAuthority.Authorized)) }, null));
+					await Task.Run(() => registeredGuildData[ctx.Guild].UpdatePermissions(null, new[] { new KeyValuePair<DiscordRole, VoiceChannelConfigurationPermissions>(role, new VoiceChannelConfigurationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Authorized, ChannelCreationQuantityAuthority.Single, ChannelAccesibilityConfigurationAuthority.Private, ChannelRegionConfigurationAuthority.Authorized, ChannelBitrateConfigurationAuthority.Authorized)) }, null));
 				}
 			}
 		}
@@ -109,7 +109,7 @@ namespace NuggetOfficial.Commands
 			{
 				if (ctx.Member.PermissionsIn(ctx.Channel).HasFlag(Permissions.ManageChannels) || ctx.Member.Roles.Contains(registeredGuildData[ctx.Guild].BotManagerRole))
 				{
-					await Task.Run(() => registeredGuildData[ctx.Guild].UpdatePermissions(null, null, new[] { new KeyValuePair<DiscordMember, VoiceChannelConfigurationPermissions>(member, new VoiceChannelConfigurationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Authorized, ChannelCreationQuantityAuthority.Single, ChannelAccesibilityConfigurationAuthority.Private, ChannelRegionConfigurationAuthority.Authorized)) }));
+					await Task.Run(() => registeredGuildData[ctx.Guild].UpdatePermissions(null, null, new[] { new KeyValuePair<DiscordMember, VoiceChannelConfigurationPermissions>(member, new VoiceChannelConfigurationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Authorized, ChannelCreationQuantityAuthority.Single, ChannelAccesibilityConfigurationAuthority.Private, ChannelRegionConfigurationAuthority.Authorized, ChannelBitrateConfigurationAuthority.Authorized)) }));
 				}
 			}
 		}
@@ -118,7 +118,7 @@ namespace NuggetOfficial.Commands
 		public async Task ChannelCreationWizard(CommandContext ctx)
 		{
 			CreateChannelWizard wizard = new CreateChannelWizard(ctx, registeredGuildData[ctx.Guild]);
-			VoiceChannelCreationData data = await wizard.CreateResponseMessage();
+			VoiceChannelCreationData data = await wizard.StartWizard();
 			await CreateChannelAndMoveMemberAsync(ctx.Guild, ctx.Member, data.UserLimit, 96000, data.SelectedRegion, null);
 		}
 
@@ -144,7 +144,7 @@ namespace NuggetOfficial.Commands
 					goto Completed;
 				}
 
-				if (!ValidateMemberCreationPermissions(ctx.Guild, ctx.Member, null, publicity, region, out error)) //TODO implement channel name
+				if (!ValidateMemberCreationPermissions(ctx.Guild, ctx.Member, null, publicity, region, bitrate, out error)) //TODO implement channel name
 				{
 					messageType = MessageType.Error;
 					goto Completed;
@@ -368,9 +368,9 @@ namespace NuggetOfficial.Commands
 			//TODO implement the ranking method that allows moderators to specify what roles have access to naming capabilities, publicity options, and bitrate options
 			List<DiscordOverwriteBuilder> channelPermissionsBuilderList = new List<DiscordOverwriteBuilder>
 			{
-				new DiscordOverwriteBuilder().For(guild.EveryoneRole).Deny(Permissions.AccessChannels | Permissions.UseVoice), //Prevent everyone from viewing any channel
-				new DiscordOverwriteBuilder().For(registeredGuildData[guild].MemberRole).Allow(publicity == ChannelPublicity.Hidden ? Permissions.None : Permissions.AccessChannels).Deny(publicity == ChannelPublicity.Private ? Permissions.UseVoice : Permissions.None).Deny(publicity == ChannelPublicity.Hidden ? Permissions.AccessChannels : Permissions.None), //Allow members to see private channels
-				new DiscordOverwriteBuilder().For(registeredGuildData[guild].MutedRole).Allow(publicity == ChannelPublicity.Hidden ? Permissions.None : Permissions.AccessChannels).Deny(Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection | Permissions.Stream) //Dissallow muted members from accessing or viewing
+				new DiscordOverwriteBuilder(guild.EveryoneRole).Deny(Permissions.AccessChannels | Permissions.UseVoice), //Prevent everyone from viewing any channel
+				new DiscordOverwriteBuilder(registeredGuildData[guild].MemberRole).Allow(publicity == ChannelPublicity.Hidden ? Permissions.None : Permissions.AccessChannels).Deny(publicity == ChannelPublicity.Private ? Permissions.UseVoice : Permissions.None).Deny(publicity == ChannelPublicity.Hidden ? Permissions.AccessChannels : Permissions.None), //Allow members to see private channels
+				new DiscordOverwriteBuilder(registeredGuildData[guild].MutedRole).Allow(publicity == ChannelPublicity.Hidden ? Permissions.None : Permissions.AccessChannels).Deny(Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection | Permissions.Stream) //Dissallow muted members from accessing or viewing
 			};
 
 			//TODO this might be redundant...need to test if the muted role overwrite will disallow the muted role from joining even if this allows them...though i think i know the behavior that the role system will produce
@@ -378,15 +378,15 @@ namespace NuggetOfficial.Commands
 			foreach (var member in permittedMembers)
 			{
 				if (member.Roles.Contains(registeredGuildData[guild].MutedRole)) continue; //TODO we want to inform the creator this member was not whitelisted in the vc because they have the muted role
-				channelPermissionsBuilderList.Add(new DiscordOverwriteBuilder().For(member).Allow(Permissions.AccessChannels | Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection | Permissions.Stream));
+				channelPermissionsBuilderList.Add(new DiscordOverwriteBuilder(member).Allow(Permissions.AccessChannels | Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection | Permissions.Stream));
 			}
 
 			return channelPermissionsBuilderList;
 		}
 
-		bool ValidateMemberCreationPermissions(DiscordGuild guild, DiscordMember member, string channelName, ChannelPublicity requestedPublicity, VoiceRegion requestedRegion, out string error)
+		bool ValidateMemberCreationPermissions(DiscordGuild guild, DiscordMember member, string requestedName, ChannelPublicity requestedPublicity, VoiceRegion requestedRegion, int? requestedBitrate, out string error)
 		{
-			return registeredGuildData[guild].CheckPermission(member, channelName, requestedPublicity, requestedRegion, out error);
+			return registeredGuildData[guild].CheckPermission(member, requestedName, requestedPublicity, requestedRegion, requestedBitrate, out error);
 		}
 		#endregion
 	}

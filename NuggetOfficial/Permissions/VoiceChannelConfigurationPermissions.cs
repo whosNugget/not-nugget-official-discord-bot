@@ -120,10 +120,26 @@ namespace NuggetOfficial.Authority
 		Authorized
 	}
 
+	/// <summary>
+	/// The representation of a member or role's authority to modify a channel's bitrate
+	/// </summary>
+	public enum ChannelBitrateConfigurationAuthority : byte
+	{
+		/// <summary>
+		/// The represented member or role is not authorized to modify a channel's bitrate
+		/// </summary>
+		Unaurhotized,
+
+		/// <summary>
+		/// The represented member or role is not authorized to modify a channel's bitrate
+		/// </summary>
+		Authorized
+	}
+
 	[JsonObject]
 	public class VoiceChannelConfigurationPermissions
 	{
-		public static VoiceChannelConfigurationPermissions Authorized { get => new VoiceChannelConfigurationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Authorized, ChannelCreationQuantityAuthority.Unlimited, ChannelAccesibilityConfigurationAuthority.Authorized, ChannelRegionConfigurationAuthority.Authorized); }
+		public static VoiceChannelConfigurationPermissions Authorized { get => new VoiceChannelConfigurationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Authorized, ChannelCreationQuantityAuthority.Unlimited, ChannelAccesibilityConfigurationAuthority.Authorized, ChannelRegionConfigurationAuthority.Authorized, ChannelBitrateConfigurationAuthority.Unaurhotized); }
 		public static VoiceChannelConfigurationPermissions Unauthorized { get => new VoiceChannelConfigurationPermissions(); }
 
 		[JsonProperty("channel_creation_authority")]
@@ -136,6 +152,8 @@ namespace NuggetOfficial.Authority
 		public ChannelAccesibilityConfigurationAuthority ChannelAccesibilityConfigurationAuthority {get; private set; }
 		[JsonProperty("channel_region_configuration_authority")]
 		public ChannelRegionConfigurationAuthority ChannelRegionConfigurationAuthority {get; private set; }
+		[JsonProperty("channel_bitrate_configuration_authority")]
+		public ChannelBitrateConfigurationAuthority ChannelBitrateConfigurationAuthority { get; private set; }
 		[JsonProperty("channel_creation_quantity")]
 		public int SpecificChannelCreationQuantity { get; private set; }
 
@@ -158,29 +176,32 @@ namespace NuggetOfficial.Authority
 		/// <param name="channelAccesibilityConfigurationAuthority">Represented member or role's authorization to configure a channel's accesibility</param>
 		/// <param name="channelRegionConfigurationAuthority">Represented member or role's authorization to configure a channel's voice server location</param>
 		/// <param name="specificChannelCreationQuantity">Number of channels the represented member can create. Only applies to members or roles with the <c>ChannelCreationQuantityAuthority.Specified</c> authority</param>
-		public VoiceChannelConfigurationPermissions(ChannelCreationAuthority channelCreationAuthority, ChannelRenameAuthority channelRenameAuthority, ChannelCreationQuantityAuthority channelCreationQuantityAuthority, ChannelAccesibilityConfigurationAuthority channelAccesibilityConfigurationAuthority, ChannelRegionConfigurationAuthority channelRegionConfigurationAuthority, int specificChannelCreationQuantity = 1)
+		public VoiceChannelConfigurationPermissions(ChannelCreationAuthority channelCreationAuthority, ChannelRenameAuthority channelRenameAuthority, ChannelCreationQuantityAuthority channelCreationQuantityAuthority, ChannelAccesibilityConfigurationAuthority channelAccesibilityConfigurationAuthority, ChannelRegionConfigurationAuthority channelRegionConfigurationAuthority, ChannelBitrateConfigurationAuthority channelBitrateConfigurationAuthority, int specificChannelCreationQuantity = 1)
 		{
 			ChannelCreationAuthority = channelCreationAuthority;
 			ChannelRenameAuthority = channelRenameAuthority;
 			ChannelCreationQuantityAuthority = channelCreationQuantityAuthority;
 			ChannelAccesibilityConfigurationAuthority = channelAccesibilityConfigurationAuthority;
 			ChannelRegionConfigurationAuthority = channelRegionConfigurationAuthority;
+			ChannelBitrateConfigurationAuthority = channelBitrateConfigurationAuthority;
 			SpecificChannelCreationQuantity = specificChannelCreationQuantity;
 		}
 
 		/// <summary>
 		/// Validate that the provided parameters adhere to this permission scheme
 		/// </summary>
+		/// <param name="channelRenamed">Was the channel renamed</param>
 		/// <param name="requestedPublicity">The requested publicity of the channel to be created</param>
 		/// M<param name="existingChannels">The number of existing channels the represented member has, if any</param>
 		/// <param name="requestedRegion">The requested voice region to use for the channel to be created</param>
+		/// <param name="bitrateChanged">Was the bitrate of the channel changed</param>
 		/// <param name="error">If a parameter does not adhere to this scheme, an error message will be generated</param>
 		/// <returns><c>true</c> if the parameters adhere to this permission scheme, <c>false</c> if otherwise</returns>
-		public bool ValidateChannelCreationAuthority(bool attemptRename, ChannelPublicity requestedPublicity, int existingChannels, VoiceRegion requestedRegion, out string error)
+		public bool ValidateChannelCreationAuthority(bool channelRenamed, ChannelPublicity requestedPublicity, int existingChannels, VoiceRegion requestedRegion, bool bitrateChanged, out string error)
 		{
 			error = string.Empty;
 
-			if (attemptRename && ChannelRenameAuthority != ChannelRenameAuthority.Authorized)
+			if (channelRenamed && ChannelRenameAuthority != ChannelRenameAuthority.Authorized)
 			{
 				error = $"Member does not have the authority to rename voice channels";
 				goto RequestedParametersInvalid;
@@ -210,6 +231,12 @@ namespace NuggetOfficial.Authority
 			if (ChannelRegionConfigurationAuthority != ChannelRegionConfigurationAuthority.Authorized && requestedRegion != VoiceRegion.Automatic)
 			{
 				error = "Member does not have the authority to change the voice channel's region";
+				goto RequestedParametersInvalid;
+			}
+
+			if (ChannelBitrateConfigurationAuthority != ChannelBitrateConfigurationAuthority.Authorized && bitrateChanged)
+			{
+				error = "Member does not have the authority to change the voice channel's bitrate";
 				goto RequestedParametersInvalid;
 			}
 

@@ -17,44 +17,49 @@ namespace NuggetOfficial.Data.VoiceModule
 	public struct VoiceChannelCreationData
 	{
 		/// <summary>
-		/// 
+		/// Preconfigured struct representing a creation event which was cancelled
 		/// </summary>
 		public static VoiceChannelCreationData CreationCancelled { get => new VoiceChannelCreationData { Cancelled = true }; }
 		/// <summary>
-		/// 
+		/// Preconfigured struct representing a creation event which caught an error
 		/// </summary>
 		public static VoiceChannelCreationData CreationErrored { get => new VoiceChannelCreationData { Success = false }; }
 
 		/// <summary>
-		/// 
+		/// Was the creation cancelled?
 		/// </summary>
 		public bool Cancelled { get; private set; }
 		/// <summary>
-		/// 
+		/// Was the creation successful?
 		/// </summary>
 		public bool Success { get; private set; }
 		/// <summary>
-		/// 
+		/// The name of the newly created channel, should one exist
 		/// </summary>
 		public string ChannelName { get; private set; }
 		/// <summary>
-		/// 
+		/// Does the channel have a joined user limit?
 		/// </summary>
 		public bool IsLimited { get; private set; }
 		/// <summary>
-		/// 
+		/// The number of users that would normally be allowed to join should the channel be a limited channel
 		/// </summary>
 		public int UserLimit { get; private set; }
 		/// <summary>
-		/// 
+		/// The bitrate of the channel
+		/// </summary>
+		public int Bitrate { get; set; }
+		/// <summary>
+		/// The publicity of the created channel
 		/// </summary>
 		public ChannelPublicity SelectedPublicity { get; private set; }
 		/// <summary>
-		/// 
+		/// The voice region of the created channel
 		/// </summary>
 		public VoiceRegion SelectedRegion { get; private set; }
+
 		/// <summary>
-		/// 
+		/// Construct a new <see cref="VoiceChannelCreationData"/> from an existing <see cref="CreateChannelWizard.ResultData"/> instance
 		/// </summary>
 		/// <param name="resultData"></param>
 		public VoiceChannelCreationData(CreateChannelWizard.ResultData resultData)
@@ -64,6 +69,7 @@ namespace NuggetOfficial.Data.VoiceModule
 			ChannelName = resultData.ChannelName;
 			IsLimited = resultData.IsLimited;
 			UserLimit = resultData.UserLimit;
+			Bitrate = resultData.Bitrate;
 
 			switch (resultData.SelectedVisibility.Name)
 			{
@@ -139,11 +145,11 @@ namespace NuggetOfficial.Data.VoiceModule
 
 	//TODO i want to refactor this to make it much tidyer...idk its just ugly to me rn
 	/// <summary>
-	/// 
+	/// Channel creation wizard object. Use this object to initialize and advance the wizard steps
 	/// </summary>
 	public class CreateChannelWizard
 	{
-		enum AllowedFlag { None = 0, Rename = 1, Public = 2, Private = 4, Hidden = 8, Supporter = 16, Limited = 32, RegionEdit = 64 }
+		enum AllowedFlag { None = 0, Rename = 1, Public = 2, Private = 4, Hidden = 8, Supporter = 16, Limited = 32, RegionEdit = 64, BitrateEdit = 128 }
 		public struct ResultData
 		{
 			public bool TimedOut { get; set; }
@@ -151,6 +157,7 @@ namespace NuggetOfficial.Data.VoiceModule
 			public string ChannelName { get; set; }
 			public bool IsLimited { get; set; }
 			public int UserLimit { get; set; }
+			public int Bitrate { get; set; }
 			public DiscordEmoji SelectedVisibility { get; set; }
 			public DiscordEmoji SelectedRegion { get; set; }
 		}
@@ -176,11 +183,13 @@ namespace NuggetOfficial.Data.VoiceModule
 		static DiscordEmoji singapore;
 		static DiscordEmoji southafrica;
 		static DiscordEmoji sydney;
+		static DiscordEmoji usa;
+		static DiscordEmoji auto;
+		//
 		static DiscordEmoji uscentral;
 		static DiscordEmoji useast;
 		static DiscordEmoji ussouth;
 		static DiscordEmoji uswest;
-		static DiscordEmoji auto;
 		//
 		static IEnumerable<DiscordEmoji> regionList;
 
@@ -208,6 +217,7 @@ namespace NuggetOfficial.Data.VoiceModule
 			if (permissions.ChannelAccesibilityConfigurationAuthority.HasFlag(ChannelAccesibilityConfigurationAuthority.Hidden)) allowedFlag |= AllowedFlag.Hidden;
 			if (permissions.ChannelAccesibilityConfigurationAuthority.HasFlag(ChannelAccesibilityConfigurationAuthority.Supporter)) allowedFlag |= AllowedFlag.Supporter;
 			if (permissions.ChannelAccesibilityConfigurationAuthority.HasFlag(ChannelAccesibilityConfigurationAuthority.Limited)) allowedFlag |= AllowedFlag.Limited;
+			if (permissions.ChannelBitrateConfigurationAuthority == ChannelBitrateConfigurationAuthority.Authorized) allowedFlag |= AllowedFlag.BitrateEdit;
 			if (permissions.ChannelRegionConfigurationAuthority == ChannelRegionConfigurationAuthority.Authorized) allowedFlag |= AllowedFlag.RegionEdit;
 		}
 
@@ -231,18 +241,19 @@ namespace NuggetOfficial.Data.VoiceModule
 			singapore = DiscordEmoji.FromName(ctx.Client, ":flag_sg:", false);
 			southafrica = DiscordEmoji.FromName(ctx.Client, ":flag_za:", false);
 			sydney = DiscordEmoji.FromName(ctx.Client, ":flag_au:", false);
+			usa = DiscordEmoji.FromName(ctx.Client, ":flag_us:", false);
 			uscentral = DiscordEmoji.FromName(ctx.Client, ":arrow_up:", false);
 			useast = DiscordEmoji.FromName(ctx.Client, ":arrow_right:", false);
 			ussouth = DiscordEmoji.FromName(ctx.Client, ":arrow_down:", false);
 			uswest = DiscordEmoji.FromName(ctx.Client, ":arrow_left:", false);
 			auto = DiscordEmoji.FromName(ctx.Client, ":green_square:", false);
 
-			regionList = new[] { brazil, europe, hongkong, india, japan, russia, singapore, southafrica, sydney, uscentral, useast, ussouth, uswest, auto };
+			regionList = new[] { brazil, europe, hongkong, india, japan, russia, singapore, southafrica, sydney, usa, auto };
 
 			emojiPopulated = true;
 		}
 
-		public async Task<VoiceChannelCreationData> CreateResponseMessage()
+		public async Task<VoiceChannelCreationData> StartWizard()
 		{
 			DiscordEmbedBuilder builder = new DiscordEmbedBuilder().WithTitle("Channel creation wizard").WithThumbnail(ctx.Member.AvatarUrl);
 			bool error = false;
@@ -279,6 +290,7 @@ namespace NuggetOfficial.Data.VoiceModule
 			if (allowedFlag.HasFlag(AllowedFlag.Rename)) taskSteps.Add(AwaitRenameInteraction);
 			if (allowedFlag.HasFlag(AllowedFlag.Private | AllowedFlag.Hidden | AllowedFlag.Supporter)) taskSteps.Add(AwaitAccesibilityInteraction);
 			if (allowedFlag.HasFlag(AllowedFlag.Limited)) taskSteps.Add(AwaitLimitedInteraction);
+			if (allowedFlag.HasFlag(AllowedFlag.BitrateEdit)) taskSteps.Add(AwaitBitrateInteraction);
 			if (allowedFlag.HasFlag(AllowedFlag.RegionEdit)) taskSteps.Add(AwaitRegionInteraction);
 			return taskSteps;
 		}
@@ -357,17 +369,45 @@ namespace NuggetOfficial.Data.VoiceModule
 		async Task AwaitLimitedNumberResponse()
 		{
 			await responseInteractionMessage.ModifyAsync(GetBuilder("Channel creation wizard - Enter channel user limit", $"{ctx.Member.Mention}: Please send a message containing only a number between 2 and 99. This number will be the maximum allowed connected users for the channel", DiscordColor.Blue, "Wizard limited user step").Build());
-			int outResult = 0;
 
 			InteractivityResult<DiscordMessage> result = await ctx.Channel.GetNextMessageAsync(ctx.Member);
-			_ = int.TryParse(result.Result.Content, out outResult);
-			bool success = outResult > 1 && outResult <= 99;
+			bool success = int.TryParse(result.Result.Content, out int outResult) && outResult > 1 && outResult <= 99;
 
 			if (this.result.TimedOut = result.TimedOut || !success) return;
 			this.result.UserLimit = outResult;
 		}
 
-		//TODO bitrate
+		async Task AwaitBitrateInteraction()
+		{
+			await responseInteractionMessage.ModifyAsync(GetBuilder("Channel creation wizard - Change channel bitrate", "Would you like to change the channel's bitrate?", DiscordColor.Blue, "Wizard bitrate step").Build());
+
+			InteractivityResult<MessageReactionAddEventArgs> result = await responseInteractionMessage.WaitForReactionAsync(ctx.Member);
+			if (this.result.TimedOut = result.TimedOut || (this.result.Cancelled = result.Result.Emoji.Equals(cancel))) return;
+
+			if (result.Result.Emoji.Equals(yes))
+			{
+				await AwaitBitrateResponse();
+				return;
+			}
+
+			this.result.Bitrate = 64000;
+		}
+
+		async Task AwaitBitrateResponse()
+		{
+			await responseInteractionMessage.ModifyAsync(GetBuilder("Channel creation wizard - Change channel bitrate",
+				"Enter a valid number of your desired bitrate",
+				DiscordColor.Blue,
+				"Wizard bitrate step")
+				.AddField("Valid number range", "Enter a number between 8000 and 96000")
+				.Build());
+
+			InteractivityResult<DiscordMessage> result = await ctx.Channel.GetNextMessageAsync(ctx.Member);
+			bool success = int.TryParse(result.Result.Content, out int outResult) && outResult >= 8000 && outResult <= 96000;
+
+			if (this.result.TimedOut = result.TimedOut || !success) return;
+			this.result.UserLimit = outResult;
+		}
 
 		async Task AwaitRegionInteraction()
 		{
@@ -377,6 +417,38 @@ namespace NuggetOfficial.Data.VoiceModule
 			{
 				await responseInteractionMessage.CreateReactionAsync(emoji);
 			}
+			await responseInteractionMessage.CreateReactionAsync(cancel);
+
+			InteractivityResult<MessageReactionAddEventArgs> result = await responseInteractionMessage.WaitForReactionAsync(ctx.Member);
+			if (this.result.TimedOut = result.TimedOut || (this.result.Cancelled = result.Result.Emoji.Equals(cancel))) return;
+
+			if (result.Result.Emoji.Equals(usa))
+			{
+				await AwaitUSSubregionInteraction();
+				return;
+			}
+
+			this.result.SelectedRegion = result.Result.Emoji;
+		}
+
+		async Task AwaitUSSubregionInteraction()
+		{
+			//That method doesn't have much removal of extra code so I am okay with having one of these in every task
+			await responseInteractionMessage.ModifyAsync(GetBuilder("Channel creation wizard - Select channel region",
+				$"{ctx.Member.Mention}: Please react to this message with the desired region the voice channel should use. React with :green_square: to allow Discord to automatically select the region. React with :region_us: to show the US subregion wizard step.",
+				DiscordColor.Blue,
+				"Wizard region select step")
+				.AddField("US Central", $"Use {uscentral} to select the US Central region")
+				.AddField("US East", $"Use {useast} to select the US Central region")
+				.AddField("US South", $"Use {ussouth} to select the US Central region")
+				.AddField("US West", $"Use {uswest} to select the US Central region")
+				.Build());
+			
+			await responseInteractionMessage.CreateReactionAsync(uscentral);
+			await responseInteractionMessage.CreateReactionAsync(useast);
+			await responseInteractionMessage.CreateReactionAsync(ussouth);
+			await responseInteractionMessage.CreateReactionAsync(uswest);
+			await responseInteractionMessage.CreateReactionAsync(auto);
 			await responseInteractionMessage.CreateReactionAsync(cancel);
 
 			InteractivityResult<MessageReactionAddEventArgs> result = await responseInteractionMessage.WaitForReactionAsync(ctx.Member);
@@ -400,9 +472,10 @@ namespace NuggetOfficial.Data.VoiceModule
 			await responseInteractionMessage.ModifyAsync(GetBuilder("Channel creation wizard - Timed out", "The interactivity timeout for this wizard was reached", DiscordColor.Red, "Error: Timed out").Build());
 		}
 
+		//TODO remove or make better...theres no reason not to use a default builder list. Either way there's gonna be a repition of code
 		DiscordEmbedBuilder GetBuilder(string title, string description, DiscordColor color, string footer)
 		{
-			return new DiscordEmbedBuilder().WithTitle(title).WithDescription(description).WithColor(color).WithFooter(footer).WithThumbnail(ctx.Member.AvatarUrl);
+			return new DiscordEmbedBuilder().WithTitle(title).WithDescription(description).WithColor(color).WithFooter(footer).WithThumbnail(ctx.Guild.IconUrl);
 		}
 	}
 }

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace NuggetOfficial.Data.Converters
 {
-	public class PermitDenyStringToBoolConverter : IArgumentConverter<bool>
+	public class PermitDenyStringConverter : IArgumentConverter<bool>
 	{
 		public Task<Optional<bool>> ConvertAsync(string value, CommandContext ctx)
 		{

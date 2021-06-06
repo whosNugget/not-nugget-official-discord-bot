@@ -429,10 +429,11 @@ namespace NuggetOfficial.Data.VoiceModule
 		/// <param name="requestedRegion"></param>
 		/// <param name="error"></param>
 		/// <returns></returns>
-		public bool CheckPermission(DiscordMember member, string name, ChannelPublicity requestedPublicity, VoiceRegion requestedRegion, out string error)
+		public bool CheckPermission(DiscordMember member, string name, ChannelPublicity requestedPublicity, VoiceRegion requestedRegion, int? bitrate, out string error)
 		{
+			int defaultBitrate = 64000;
 			int existingChannels = (CreatedChannels.ContainsKey(member) ? CreatedChannels[member]?.Count : 0) ?? 0;
-			return GetMemberPermissions(member).ValidateChannelCreationAuthority(string.IsNullOrWhiteSpace(name), requestedPublicity, existingChannels, requestedRegion, out error);
+			return GetMemberPermissions(member).ValidateChannelCreationAuthority(string.IsNullOrWhiteSpace(name), requestedPublicity, existingChannels, requestedRegion, bitrate != defaultBitrate, out error);
 		}
 
 		/// <summary>
