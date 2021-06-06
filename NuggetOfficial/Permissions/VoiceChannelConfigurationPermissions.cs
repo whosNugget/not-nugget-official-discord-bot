@@ -8,7 +8,7 @@ namespace NuggetOfficial.Authority
 	/// <summary>
 	/// The representation of a member or role's authority to create channels
 	/// </summary>
-	public enum ChannelCreationAuthority
+	public enum ChannelCreationAuthority : byte
 	{
 		/// <summary>
 		/// The represented member or role is not authorized to create channels
@@ -24,7 +24,7 @@ namespace NuggetOfficial.Authority
 	/// <summary>
 	/// The representation of a member or role's authority to reaname created channels
 	/// </summary>
-	public enum ChannelRenameAuthority
+	public enum ChannelRenameAuthority : byte
 	{
 		/// <summary>
 		/// The represented member or role is not authorized to rename created channels
@@ -40,7 +40,7 @@ namespace NuggetOfficial.Authority
 	/// <summary>
 	/// The representation of a member or role's authority to create multiple channels
 	/// </summary>
-	public enum ChannelCreationQuantityAuthority
+	public enum ChannelCreationQuantityAuthority : byte
 	{
 		/// <summary>
 		/// The represented member or role is not authorized to create any voice channels
@@ -66,7 +66,7 @@ namespace NuggetOfficial.Authority
 	/// <summary>
 	/// The representation of a member or role's authority to specify a channel's accesibility
 	/// </summary>
-	public enum ChannelAccesibilityConfigurationAuthority
+	public enum ChannelAccesibilityConfigurationAuthority : byte
 	{
 		/// <summary>
 		/// The represented member or role is not authorized to create a channel
@@ -107,7 +107,7 @@ namespace NuggetOfficial.Authority
 	/// <summary>
 	/// The representation of a member or role's authority to modify a channel's RTC region
 	/// </summary>
-	public enum ChannelRegionConfigurationAuthority
+	public enum ChannelRegionConfigurationAuthority : byte
 	{
 		/// <summary>
 		/// The represented member or role is not authorized to modify a channel's RTC region
