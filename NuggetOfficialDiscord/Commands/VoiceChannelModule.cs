@@ -2,18 +2,18 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using NuggetOfficial.Data;
-using NuggetOfficial.Authority;
+using NuggetDiscordBot.Data;
+using NuggetDiscordBot.Authority;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NuggetOfficial.Data.VoiceModule;
-using NuggetOfficial.Actions.Serialization;
+using NuggetDiscordBot.Data.VoiceModule;
+using NuggetDiscordBot.Actions.Serialization;
 
-namespace NuggetOfficial.Commands
+namespace NuggetDiscordBot.Commands
 {
 	public class VoiceChannelModule : BaseCommandModule
 	{

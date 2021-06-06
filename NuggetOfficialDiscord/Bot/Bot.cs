@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace NuggetOfficial.Bot
+namespace NuggetDiscordBot.Bot
 {
 	public abstract class DiscordBot
 	{

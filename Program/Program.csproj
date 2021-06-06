@@ -14,7 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NuggetOfficial\NuggetOfficial.csproj" />
+    <ProjectReference Include="..\NuggetOfficialDiscord\NuggetOfficialDiscord.csproj" />
+    <ProjectReference Include="..\NuggetOfficialTwitch\NuggetOfficialTwitch.csproj" />
   </ItemGroup>
 
 </Project>

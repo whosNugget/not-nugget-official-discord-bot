@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NuggetOfficial.Data.Converters
+namespace NuggetDiscordBot.Data.Converters
 {
 	public class ServerRegionConverter : IArgumentConverter<VoiceRegion>
 	{

@@ -1,8 +1,8 @@
 ﻿using Newtonsoft.Json;
-using NuggetOfficial.Data;
+using NuggetDiscordBot.Data;
 using System;
 
-namespace NuggetOfficial.Authority
+namespace NuggetDiscordBot.Authority
 {
 	//TODO move these to their own files?
 	/// <summary>

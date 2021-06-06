@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NuggetOfficial.Commands
+namespace NuggetDiscordBot.Commands
 {
 	public class ModerationModule : BaseCommandModule
 	{

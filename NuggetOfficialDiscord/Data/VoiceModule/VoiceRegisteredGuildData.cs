@@ -1,16 +1,16 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Entities;
 using Newtonsoft.Json;
-using NuggetOfficial.Actions.Serialization;
-using NuggetOfficial.Actions.Serialization.Interfaces;
-using NuggetOfficial.Authority;
+using NuggetDiscordBot.Actions.Serialization;
+using NuggetDiscordBot.Actions.Serialization.Interfaces;
+using NuggetDiscordBot.Authority;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace NuggetOfficial.Data.VoiceModule
+namespace NuggetDiscordBot.Data.VoiceModule
 {
 	//TODO abstractify this class so it can be more broad/dynamic maybe?
 	//should store channel, user, and permission data on a per-guild basis

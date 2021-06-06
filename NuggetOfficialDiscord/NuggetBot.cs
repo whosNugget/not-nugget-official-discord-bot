@@ -3,14 +3,14 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.EventArgs;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using NuggetOfficial.Actions.Serialization;
-using NuggetOfficial.Bot;
-using NuggetOfficial.Commands;
-using NuggetOfficial.Data.Converters;
-using NuggetOfficial.Data.VoiceModule;
+using NuggetDiscordBot.Actions.Serialization;
+using NuggetDiscordBot.Bot;
+using NuggetDiscordBot.Commands;
+using NuggetDiscordBot.Data.Converters;
+using NuggetDiscordBot.Data.VoiceModule;
 using System.Threading.Tasks;
 
-namespace NuggetOfficial
+namespace NuggetDiscordBot
 {
 	public class NuggetBot : DiscordBot
 	{
@@ -60,6 +60,7 @@ namespace NuggetOfficial
 			//commands.RegisterCommands<ModerationModule>();
 			//commands.RegisterCommands<MusicModule>();
 			commands.RegisterCommands<VoiceChannelModule>();
+			commands.RegisterCommands<TwitchNotificationModule>();
 			commands.RegisterConverter(new ServerRegionConverter());
 			commands.RegisterConverter(new ChannelPublicityConverter());
 			commands.RegisterConverter(new PermitDenyStringToBoolConverter());
