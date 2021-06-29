@@ -253,7 +253,7 @@ namespace NuggetOfficial.Commands
 			DiscordChannel createdChannel = null;
 			try
 			{
-				createdChannel = await guild.CreateVoiceChannelAsync(channelCreator.Nickname ?? $"{channelCreator.DisplayName}'s VC", registeredGuildData[guild].ParentCategory, bitrate, maxUsers, permissions, $"Channel created via command by member {channelCreator.DisplayName}#{channelCreator.Discriminator}:{channelCreator.Id}");
+				createdChannel = await guild.CreateVoiceChannelAsync(channelCreator.Nickname ?? $"{channelCreator.DisplayName}'s VC", registeredGuildData[guild].ParentCategory, bitrate, maxUsers, permissions, VideoQualityMode.Auto, $"Channel created via command by member {channelCreator.DisplayName}#{channelCreator.Discriminator}:{channelCreator.Id}");
 				registeredGuildData[guild].AddChannel(channelCreator, createdChannel); //Add the channel to the registerred guild's data container
 			}
 			catch (Exception)
