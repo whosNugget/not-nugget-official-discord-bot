@@ -1,4 +1,4 @@
-﻿namespace NuggetOfficial.Discord.Data
+﻿namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 {
 	public enum ChannelPublicity
 	{

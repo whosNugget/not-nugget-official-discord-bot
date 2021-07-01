@@ -2,7 +2,7 @@
 using DSharpPlus.Entities;
 using System.Collections.Generic;
 
-namespace NuggetOfficial.Discord.Data.VoiceModule
+namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 {
 	/// <summary>
 	/// Structure containing all parameters used for creating or editing channels, as well as some commonly useful metadata. Create instances of this structure using the initialization syntax

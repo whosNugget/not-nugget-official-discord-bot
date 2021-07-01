@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace NuggetOfficial.Discord.Data
+﻿namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 {
 	public enum VoiceRegion
 	{

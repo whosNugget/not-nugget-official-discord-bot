@@ -1,7 +1,7 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Entities;
 using Newtonsoft.Json;
-using NuggetOfficial.Discord.Authority;
+using NuggetOfficial.Discord.Commands.VoiceHubModule.Data.Permissions;
 using NuggetOfficial.Discord.Serialization;
 using NuggetOfficial.Discord.Serialization.Interfaces;
 using System;
@@ -10,7 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace NuggetOfficial.Discord.Data.VoiceModule
+namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 {
 	//TODO abstractify this class so it can be more broad/dynamic maybe?
 	//should store channel, user, and permission data on a per-guild basis

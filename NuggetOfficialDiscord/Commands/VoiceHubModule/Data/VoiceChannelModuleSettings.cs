@@ -1,4 +1,4 @@
-﻿namespace NuggetOfficial.Discord.Data.VoiceModule
+﻿namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 {
 	public class VoiceChannelModuleSettings
     {

@@ -1,4 +1,4 @@
-﻿namespace NuggetOfficial.Discord.Authority
+﻿namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data.Permissions
 {
 	/// <summary>
 	/// The representation of a member or role's authorities they cannot violate when creating or editing channels

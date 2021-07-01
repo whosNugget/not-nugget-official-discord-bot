@@ -3,12 +3,12 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
-using NuggetOfficial.Discord.Authority;
+using NuggetOfficial.Discord.Commands.VoiceHubModule.Data.Permissions;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace NuggetOfficial.Discord.Data.VoiceModule
+namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 {
 	/// <summary>
 	/// 

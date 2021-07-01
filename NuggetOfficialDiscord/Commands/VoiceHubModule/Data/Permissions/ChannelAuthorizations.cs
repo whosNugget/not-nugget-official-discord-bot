@@ -1,9 +1,7 @@
 ﻿using Newtonsoft.Json;
-using NuggetOfficial.Discord.Data;
-using NuggetOfficial.Discord.Data.VoiceModule;
 using System.Collections.Generic;
 
-namespace NuggetOfficial.Discord.Authority
+namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data.Permissions
 {
 	///// <summary>
 	///// The representation of a member or role's authority to create channels
