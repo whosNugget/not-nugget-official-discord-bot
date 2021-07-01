@@ -1,9 +1,6 @@
 ﻿using DSharpPlus.CommandsNext;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace NuggetOfficial.Commands
+namespace NuggetOfficial.Discord.Commands
 {
 	public class MusicModule : BaseCommandModule
 	{

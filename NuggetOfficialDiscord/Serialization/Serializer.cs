@@ -1,12 +1,8 @@
-﻿using DSharpPlus.Entities;
-using Newtonsoft.Json;
-using NuggetOfficial.Actions.Serialization.Interfaces;
-using NuggetOfficial.Data.VoiceModule;
-using System;
+﻿using Newtonsoft.Json;
+using NuggetOfficial.Discord.Serialization.Interfaces;
 using System.IO;
-using System.Threading.Tasks;
 
-namespace NuggetOfficial.Actions.Serialization
+namespace NuggetOfficial.Discord.Serialization
 {
 	///// <summary>
 	///// Result container that specifies the success of the serialization operation and any error messages if one occurred

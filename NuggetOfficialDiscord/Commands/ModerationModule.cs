@@ -1,11 +1,8 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace NuggetOfficial.Commands
+namespace NuggetOfficial.Discord.Commands
 {
 	public class ModerationModule : BaseCommandModule
 	{

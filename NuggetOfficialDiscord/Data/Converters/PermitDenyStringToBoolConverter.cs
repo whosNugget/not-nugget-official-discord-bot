@@ -1,12 +1,9 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Converters;
 using DSharpPlus.Entities;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace NuggetOfficial.Data.Converters
+namespace NuggetOfficial.Discord.Data.Converters
 {
 	public class PermitDenyStringToBoolConverter : IArgumentConverter<bool>
 	{
