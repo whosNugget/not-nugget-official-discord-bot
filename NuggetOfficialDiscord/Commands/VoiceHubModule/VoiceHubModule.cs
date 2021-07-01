@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace NuggetOfficial.Discord.Commands
 {
-	public class VoiceChannelModule : BaseCommandModule
+	public class VoiceHubModule : BaseCommandModule
 	{
 		//TODO full conversion from responding with messages to responding with embeds required (40% done)
 
@@ -26,7 +26,7 @@ namespace NuggetOfficial.Discord.Commands
 
 		readonly VoiceRegisteredGuildData registeredGuildData;
 
-		public VoiceChannelModule(VoiceRegisteredGuildData registeredGuildData)
+		public VoiceHubModule(VoiceRegisteredGuildData registeredGuildData)
 		{
 			this.registeredGuildData = registeredGuildData;
 		}

@@ -69,7 +69,7 @@ namespace NuggetOfficial.Discord
 
 			//commands.RegisterCommands<ModerationModule>();
 			//commands.RegisterCommands<MusicModule>();
-			commands.RegisterCommands<VoiceChannelModule>();
+			commands.RegisterCommands<VoiceHubModule>();
 			commands.RegisterConverter(new ServerRegionConverter());
 			commands.RegisterConverter(new ChannelPublicityConverter());
 			commands.RegisterConverter(new PermitDenyStringConverter());
