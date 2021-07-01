@@ -3,163 +3,164 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
+using NuggetOfficial.Discord.Commands.VoiceHubModule.Data;
 using NuggetOfficial.Discord.Commands.VoiceHubModule.Data.Permissions;
+using NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
+namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
 {
-	/// <summary>
-	/// 
-	/// </summary>
-	public struct VoiceChannelCreationData
-	{
-		/// <summary>
-		/// Preconfigured struct representing a creation event which was cancelled
-		/// </summary>
-		public static VoiceChannelCreationData CreationCancelled { get => new VoiceChannelCreationData { Cancelled = true }; }
-		/// <summary>
-		/// Preconfigured struct representing a creation event which caught an error
-		/// </summary>
-		public static VoiceChannelCreationData CreationErrored { get => new VoiceChannelCreationData { Success = false }; }
+	///// <summary>
+	///// 
+	///// </summary>
+	//public struct VoiceChannelCreationData
+	//{
+	//	/// <summary>
+	//	/// Preconfigured struct representing a creation event which was cancelled
+	//	/// </summary>
+	//	public static VoiceChannelCreationData CreationCancelled { get => new VoiceChannelCreationData { Cancelled = true }; }
+	//	/// <summary>
+	//	/// Preconfigured struct representing a creation event which caught an error
+	//	/// </summary>
+	//	public static VoiceChannelCreationData CreationErrored { get => new VoiceChannelCreationData { Success = false }; }
 
-		/// <summary>
-		/// Was the creation cancelled?
-		/// </summary>
-		public bool Cancelled { get; private set; }
-		/// <summary>
-		/// Was the creation successful?
-		/// </summary>
-		public bool Success { get; private set; }
-		/// <summary>
-		/// The name of the newly created channel, should one exist
-		/// </summary>
-		public string ChannelName { get; private set; }
-		/// <summary>
-		/// Does the channel have a joined user limit?
-		/// </summary>
-		public bool IsLimited { get; private set; }
-		/// <summary>
-		/// The number of users that would normally be allowed to join should the channel be a limited channel
-		/// </summary>
-		public int UserLimit { get; private set; }
-		/// <summary>
-		/// The bitrate of the channel
-		/// </summary>
-		public int Bitrate { get; set; }
-		/// <summary>
-		/// The publicity of the created channel
-		/// </summary>
-		public ChannelPublicity SelectedPublicity { get; private set; }
-		/// <summary>
-		/// The voice region of the created channel
-		/// </summary>
-		public VoiceRegion SelectedRegion { get; private set; }
+	//	/// <summary>
+	//	/// Was the creation cancelled?
+	//	/// </summary>
+	//	public bool Cancelled { get; private set; }
+	//	/// <summary>
+	//	/// Was the creation successful?
+	//	/// </summary>
+	//	public bool Success { get; private set; }
+	//	/// <summary>
+	//	/// The name of the newly created channel, should one exist
+	//	/// </summary>
+	//	public string ChannelName { get; private set; }
+	//	/// <summary>
+	//	/// Does the channel have a joined user limit?
+	//	/// </summary>
+	//	public bool IsLimited { get; private set; }
+	//	/// <summary>
+	//	/// The number of users that would normally be allowed to join should the channel be a limited channel
+	//	/// </summary>
+	//	public int UserLimit { get; private set; }
+	//	/// <summary>
+	//	/// The bitrate of the channel
+	//	/// </summary>
+	//	public int Bitrate { get; set; }
+	//	/// <summary>
+	//	/// The publicity of the created channel
+	//	/// </summary>
+	//	public ChannelPublicity SelectedPublicity { get; private set; }
+	//	/// <summary>
+	//	/// The voice region of the created channel
+	//	/// </summary>
+	//	public VoiceRegion SelectedRegion { get; private set; }
 
-		/// <summary>
-		/// Construct a new <see cref="VoiceChannelCreationData"/> from an existing <see cref="CreateChannelWizard.ResultData"/> instance
-		/// </summary>
-		/// <param name="resultData"></param>
-		public VoiceChannelCreationData(CreateChannelWizard.ResultData resultData)
-		{
-			Cancelled = resultData.Cancelled;
-			Success = !resultData.Cancelled && !resultData.TimedOut;
-			ChannelName = resultData.ChannelName;
-			IsLimited = resultData.IsLimited;
-			UserLimit = resultData.UserLimit;
-			Bitrate = resultData.Bitrate;
+	//	/// <summary>
+	//	/// Construct a new <see cref="VoiceChannelCreationData"/> from an existing <see cref="CreateChannelWizard.ResultData"/> instance
+	//	/// </summary>
+	//	/// <param name="resultData"></param>
+	//	public VoiceChannelCreationData(CreateChannelWizard.ResultData resultData)
+	//	{
+	//		Cancelled = resultData.Cancelled;
+	//		Success = !resultData.Cancelled && !resultData.TimedOut;
+	//		ChannelName = resultData.ChannelName;
+	//		IsLimited = resultData.IsLimited;
+	//		UserLimit = resultData.UserLimit;
+	//		Bitrate = resultData.Bitrate;
 
-			switch (resultData.SelectedVisibility.Name)
-			{
-				case ":unlock:":
-					SelectedPublicity = ChannelPublicity.Public;
-					break;
-				case ":closed_lock_with_key:":
-					SelectedPublicity = ChannelPublicity.Private;
-					break;
-				case ":lock_with_ink_pen:":
-					SelectedPublicity = ChannelPublicity.Hidden;
-					break;
-				case ":gem:":
-					SelectedPublicity = ChannelPublicity.Supporter;
-					break;
-				default:
-					SelectedPublicity = ChannelPublicity.Unknown;
-					Success = false;
-					break;
-			}
+	//		switch (resultData.SelectedVisibility.Name)
+	//		{
+	//			case ":unlock:":
+	//				SelectedPublicity = ChannelPublicity.Public;
+	//				break;
+	//			case ":closed_lock_with_key:":
+	//				SelectedPublicity = ChannelPublicity.Private;
+	//				break;
+	//			case ":lock_with_ink_pen:":
+	//				SelectedPublicity = ChannelPublicity.Hidden;
+	//				break;
+	//			case ":gem:":
+	//				SelectedPublicity = ChannelPublicity.Supporter;
+	//				break;
+	//			default:
+	//				SelectedPublicity = ChannelPublicity.Unknown;
+	//				Success = false;
+	//				break;
+	//		}
 
-			switch (resultData.SelectedRegion.Name)
-			{
-				case ":flag_br:":
-					SelectedRegion = VoiceRegion.Brazil;
-					break;
-				case ":flag_eu:":
-					SelectedRegion = VoiceRegion.Europe;
-					break;
-				case ":flag_hk:":
-					SelectedRegion = VoiceRegion.HongKong;
-					break;
-				case ":flag_in:":
-					SelectedRegion = VoiceRegion.India;
-					break;
-				case ":flag_jp:":
-					SelectedRegion = VoiceRegion.Japan;
-					break;
-				case ":flag_ru:":
-					SelectedRegion = VoiceRegion.Russia;
-					break;
-				case ":flag_sg:":
-					SelectedRegion = VoiceRegion.Singapore;
-					break;
-				case ":flag_za:":
-					SelectedRegion = VoiceRegion.SouthAfrica;
-					break;
-				case ":flag_au:":
-					SelectedRegion = VoiceRegion.Sydney;
-					break;
-				case ":arrow_up:":
-					SelectedRegion = VoiceRegion.USCentral;
-					break;
-				case ":arrow_right:":
-					SelectedRegion = VoiceRegion.USEast;
-					break;
-				case ":arrow_down:":
-					SelectedRegion = VoiceRegion.USSouth;
-					break;
-				case ":arrow_left:":
-					SelectedRegion = VoiceRegion.USWest;
-					break;
-				case ":green_square:":
-					SelectedRegion = VoiceRegion.Automatic;
-					break;
-				default:
-					SelectedRegion = VoiceRegion.Unknown;
-					Success = false;
-					break;
-			}
-		}
-	}
+	//		switch (resultData.SelectedRegion.Name)
+	//		{
+	//			case ":flag_br:":
+	//				SelectedRegion = VoiceRegion.Brazil;
+	//				break;
+	//			case ":flag_eu:":
+	//				SelectedRegion = VoiceRegion.Europe;
+	//				break;
+	//			case ":flag_hk:":
+	//				SelectedRegion = VoiceRegion.HongKong;
+	//				break;
+	//			case ":flag_in:":
+	//				SelectedRegion = VoiceRegion.India;
+	//				break;
+	//			case ":flag_jp:":
+	//				SelectedRegion = VoiceRegion.Japan;
+	//				break;
+	//			case ":flag_ru:":
+	//				SelectedRegion = VoiceRegion.Russia;
+	//				break;
+	//			case ":flag_sg:":
+	//				SelectedRegion = VoiceRegion.Singapore;
+	//				break;
+	//			case ":flag_za:":
+	//				SelectedRegion = VoiceRegion.SouthAfrica;
+	//				break;
+	//			case ":flag_au:":
+	//				SelectedRegion = VoiceRegion.Sydney;
+	//				break;
+	//			case ":arrow_up:":
+	//				SelectedRegion = VoiceRegion.USCentral;
+	//				break;
+	//			case ":arrow_right:":
+	//				SelectedRegion = VoiceRegion.USEast;
+	//				break;
+	//			case ":arrow_down:":
+	//				SelectedRegion = VoiceRegion.USSouth;
+	//				break;
+	//			case ":arrow_left:":
+	//				SelectedRegion = VoiceRegion.USWest;
+	//				break;
+	//			case ":green_square:":
+	//				SelectedRegion = VoiceRegion.Automatic;
+	//				break;
+	//			default:
+	//				SelectedRegion = VoiceRegion.Unknown;
+	//				Success = false;
+	//				break;
+	//		}
+	//	}
+	//}
 
 	//TODO i want to refactor this to make it much tidyer...idk its just ugly to me rn
 	/// <summary>
 	/// Channel creation wizard object. Use this object to initialize and advance the wizard steps
 	/// </summary>
-	public class CreateChannelWizard
+	public class CreateChannelWizard : EmbedInteractionWizard<WizardResult>
 	{
-		enum AllowedFlag { None = 0, Rename = 1, Public = 2, Private = 4, Hidden = 8, Supporter = 16, Limited = 32, RegionEdit = 64, BitrateEdit = 128 }
-		public struct ResultData
-		{
-			public bool TimedOut { get; set; }
-			public bool Cancelled { get; set; }
-			public string ChannelName { get; set; }
-			public bool IsLimited { get; set; }
-			public int UserLimit { get; set; }
-			public int Bitrate { get; set; }
-			public DiscordEmoji SelectedVisibility { get; set; }
-			public DiscordEmoji SelectedRegion { get; set; }
-		}
+		//public struct ResultData
+		//{
+		//	public bool TimedOut { get; set; }
+		//	public bool Cancelled { get; set; }
+		//	public string ChannelName { get; set; }
+		//	public bool IsLimited { get; set; }
+		//	public int UserLimit { get; set; }
+		//	public int Bitrate { get; set; }
+		//	public DiscordEmoji SelectedVisibility { get; set; }
+		//	public DiscordEmoji SelectedRegion { get; set; }
+		//}
 
 		static bool emojiPopulated = false;
 		//
@@ -195,13 +196,11 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 		readonly CommandContext ctx = null;
 		readonly GuildData guildData = null;
 
-		ChannelAuthorities authorities;
+		readonly ChannelAuthorities authorities;
 		DiscordMessage responseInteractionMessage = null;
-		ResultData result = new ResultData();
 
-		public CreateChannelWizard(CommandContext ctx, GuildData guildData)
+		public CreateChannelWizard(CommandContext ctx, GuildData guildData) : base(ctx)
 		{
-			this.ctx = ctx;
 			this.guildData = guildData;
 			authorities = guildData.GetMemberPermissions(ctx.Member).Authorities;
 			if (!emojiPopulated) PopulateEmoji();
@@ -239,7 +238,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 			emojiPopulated = true;
 		}
 
-		public async Task<VoiceChannelCreationData> StartWizard()
+		public override async Task SetupWizard()
 		{
 			DiscordEmbedBuilder builder = new DiscordEmbedBuilder().WithTitle("Channel creation wizard").WithThumbnail(ctx.Member.AvatarUrl);
 			bool error = false;
@@ -270,6 +269,11 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 			return await AwaitCompletedSteps();
 		}
 
+		public override async Task<WizardResult> GetResult()
+		{
+			return await base.GetResult();
+		}
+
 		IEnumerable<Func<Task>> CreateWizardSteps()
 		{
 			List<Func<Task>> taskSteps = new List<Func<Task>>();
@@ -284,12 +288,12 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 			return taskSteps;
 		}
 
-		async Task PreTask()
+		protected override async Task PreStep()
 		{
 			await responseInteractionMessage?.DeleteAllReactionsAsync("Creation wizard step advancement - Clear previous emojis - PreTask()");
 		}
 
-		async Task PostTask()
+		protected override async Task PostStep()
 		{
 			if (result.TimedOut) { await ResultTimedOut(); return; }
 			if (result.Cancelled) await WizardCancelled();

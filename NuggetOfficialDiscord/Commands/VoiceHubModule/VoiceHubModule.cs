@@ -3,6 +3,7 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using NuggetOfficial.Discord.Commands.VoiceHubModule.Data;
+using NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard;
 using NuggetOfficial.Discord.Serialization;
 using System;
 using System.Collections.Generic;

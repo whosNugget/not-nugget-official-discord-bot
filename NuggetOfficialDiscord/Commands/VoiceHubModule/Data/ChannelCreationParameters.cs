@@ -19,7 +19,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 		public int? Bitrate { get; set; }
 		public int? UserLimit { get; set; }
 		public IEnumerable<DiscordOverwrite> PermissionOverwrites { get; set; }
-		public ChannelPublicity Publicity { get; set; }
+		public ChannelAccessibility Publicity { get; set; }
 		public VoiceRegion? RequestedRegion { get; set; }
 		public VideoQualityMode? VideoQuality { get; set; }
 		public string AuditLogReason { get; set; }
