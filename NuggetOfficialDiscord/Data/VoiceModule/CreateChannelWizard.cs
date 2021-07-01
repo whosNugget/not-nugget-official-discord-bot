@@ -3,13 +3,12 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
-using NuggetOfficial.Authority;
+using NuggetOfficial.Discord.Authority;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace NuggetOfficial.Data.VoiceModule
+namespace NuggetOfficial.Discord.Data.VoiceModule
 {
 	/// <summary>
 	/// 
@@ -196,7 +195,7 @@ namespace NuggetOfficial.Data.VoiceModule
 		readonly CommandContext ctx = null;
 		readonly GuildData guildData = null;
 
-		AllowedFlag allowedFlag = AllowedFlag.None;
+		ChannelAuthorities authorities;
 		DiscordMessage responseInteractionMessage = null;
 		ResultData result = new ResultData();
 
@@ -204,21 +203,8 @@ namespace NuggetOfficial.Data.VoiceModule
 		{
 			this.ctx = ctx;
 			this.guildData = guildData;
-			GenerateAllowedFlag();
+			authorities = guildData.GetMemberPermissions(ctx.Member).Authorities;
 			if (!emojiPopulated) PopulateEmoji();
-		}
-
-		void GenerateAllowedFlag()
-		{
-			VoiceChannelConfigurationPermissions permissions = guildData.GetMemberPermissions(ctx.Member);
-
-			if (permissions.ChannelRenameAuthority == ChannelRenameAuthority.Authorized) allowedFlag |= AllowedFlag.Rename;
-			if (permissions.ChannelAccesibilityConfigurationAuthority.HasFlag(ChannelAccesibilityConfigurationAuthority.Private)) allowedFlag |= AllowedFlag.Private;
-			if (permissions.ChannelAccesibilityConfigurationAuthority.HasFlag(ChannelAccesibilityConfigurationAuthority.Hidden)) allowedFlag |= AllowedFlag.Hidden;
-			if (permissions.ChannelAccesibilityConfigurationAuthority.HasFlag(ChannelAccesibilityConfigurationAuthority.Supporter)) allowedFlag |= AllowedFlag.Supporter;
-			if (permissions.ChannelAccesibilityConfigurationAuthority.HasFlag(ChannelAccesibilityConfigurationAuthority.Limited)) allowedFlag |= AllowedFlag.Limited;
-			if (permissions.ChannelBitrateConfigurationAuthority == ChannelBitrateConfigurationAuthority.Authorized) allowedFlag |= AllowedFlag.BitrateEdit;
-			if (permissions.ChannelRegionConfigurationAuthority == ChannelRegionConfigurationAuthority.Authorized) allowedFlag |= AllowedFlag.RegionEdit;
 		}
 
 		void PopulateEmoji()
@@ -258,7 +244,7 @@ namespace NuggetOfficial.Data.VoiceModule
 			DiscordEmbedBuilder builder = new DiscordEmbedBuilder().WithTitle("Channel creation wizard").WithThumbnail(ctx.Member.AvatarUrl);
 			bool error = false;
 
-			if (allowedFlag == AllowedFlag.None)
+			if (authorities == ChannelAuthorities.CompletelyUnauthorized || !authorities.HasFlag(ChannelAuthorities.CanCreateChannels))
 			{
 				builder.WithColor(DiscordColor.Red);
 				builder.WithDescription($"{ctx.Member.Mention} does not have permission to create voice channels");
@@ -287,11 +273,14 @@ namespace NuggetOfficial.Data.VoiceModule
 		IEnumerable<Func<Task>> CreateWizardSteps()
 		{
 			List<Func<Task>> taskSteps = new List<Func<Task>>();
-			if (allowedFlag.HasFlag(AllowedFlag.Rename)) taskSteps.Add(AwaitRenameInteraction);
-			if (allowedFlag.HasFlag(AllowedFlag.Private | AllowedFlag.Hidden | AllowedFlag.Supporter)) taskSteps.Add(AwaitAccesibilityInteraction);
-			if (allowedFlag.HasFlag(AllowedFlag.Limited)) taskSteps.Add(AwaitLimitedInteraction);
-			if (allowedFlag.HasFlag(AllowedFlag.BitrateEdit)) taskSteps.Add(AwaitBitrateInteraction);
-			if (allowedFlag.HasFlag(AllowedFlag.RegionEdit)) taskSteps.Add(AwaitRegionInteraction);
+			if (authorities.HasFlag(ChannelAuthorities.CanRenameChannels)) taskSteps.Add(AwaitRenameInteraction);
+			if (authorities.HasFlag(ChannelAuthorities.CanCreatePrivateChannels)
+				|| authorities.HasFlag(ChannelAuthorities.CanCreateSupporterChannels)
+				|| authorities.HasFlag(ChannelAuthorities.CanCreateHiddenChannels))
+				taskSteps.Add(AwaitAccesibilityInteraction);
+			if (authorities.HasFlag(ChannelAuthorities.CanCreateLimitedChannels)) taskSteps.Add(AwaitLimitedInteraction);
+			if (authorities.HasFlag(ChannelAuthorities.CanModifyChannelBitrate)) taskSteps.Add(AwaitBitrateInteraction);
+			if (authorities.HasFlag(ChannelAuthorities.CanModifyChannelRegion)) taskSteps.Add(AwaitRegionInteraction);
 			return taskSteps;
 		}
 
@@ -337,10 +326,12 @@ namespace NuggetOfficial.Data.VoiceModule
 		{
 			await responseInteractionMessage.ModifyAsync(GetBuilder("Channel creation wizard - Channel accesibility", $"{ctx.Member.Mention}: Who would you like to allow access to the channel by default?", DiscordColor.Blue, "Wizard accesibility step").Build());
 
-			if (allowedFlag.HasFlag(AllowedFlag.Public)) await responseInteractionMessage.CreateReactionAsync(@public);
-			if (allowedFlag.HasFlag(AllowedFlag.Private)) await responseInteractionMessage.CreateReactionAsync(@private);
-			if (allowedFlag.HasFlag(AllowedFlag.Hidden)) await responseInteractionMessage.CreateReactionAsync(hidden);
-			if (allowedFlag.HasFlag(AllowedFlag.Supporter)) await responseInteractionMessage.CreateReactionAsync(supporter);
+			//TODO check if only one channel can be created, i.e. user can only create public channels
+
+			if (authorities.HasFlag(ChannelAuthorities.CanCreatePublicChannels)) await responseInteractionMessage.CreateReactionAsync(@public);
+			if (authorities.HasFlag(ChannelAuthorities.CanCreatePrivateChannels)) await responseInteractionMessage.CreateReactionAsync(@private);
+			if (authorities.HasFlag(ChannelAuthorities.CanCreateHiddenChannels)) await responseInteractionMessage.CreateReactionAsync(hidden);
+			if (authorities.HasFlag(ChannelAuthorities.CanCreateSupporterChannels)) await responseInteractionMessage.CreateReactionAsync(supporter);
 			await responseInteractionMessage.CreateReactionAsync(cancel);
 
 			InteractivityResult<MessageReactionAddEventArgs> result = await responseInteractionMessage.WaitForReactionAsync(ctx.Member);
@@ -443,7 +434,6 @@ namespace NuggetOfficial.Data.VoiceModule
 				.AddField("US South", $"Use {ussouth} to select the US Central region")
 				.AddField("US West", $"Use {uswest} to select the US Central region")
 				.Build());
-			
 			await responseInteractionMessage.CreateReactionAsync(uscentral);
 			await responseInteractionMessage.CreateReactionAsync(useast);
 			await responseInteractionMessage.CreateReactionAsync(ussouth);

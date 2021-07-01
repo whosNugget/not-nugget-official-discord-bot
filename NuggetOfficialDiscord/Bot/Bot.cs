@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace NuggetOfficial.Bot
+namespace NuggetOfficial.Discord.Bot
 {
 	//TODO research the whole "host" thing and see if this can be run in its own service. Additionally, allow the calling
 	//application terminate that service across executions. Finally, should it ever be necessary, research how to communicate

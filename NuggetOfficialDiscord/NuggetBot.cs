@@ -6,15 +6,15 @@ using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using NuggetOfficial.Actions.Serialization;
-using NuggetOfficial.Bot;
-using NuggetOfficial.Commands;
-using NuggetOfficial.Data.Converters;
-using NuggetOfficial.Data.VoiceModule;
+using NuggetOfficial.Discord.Bot;
+using NuggetOfficial.Discord.Commands;
+using NuggetOfficial.Discord.Data.Converters;
+using NuggetOfficial.Discord.Data.VoiceModule;
+using NuggetOfficial.Discord.Serialization;
 using System;
 using System.Threading.Tasks;
 
-namespace NuggetOfficial
+namespace NuggetOfficial.Discord
 {
 	public class NuggetBot : DiscordBot
 	{

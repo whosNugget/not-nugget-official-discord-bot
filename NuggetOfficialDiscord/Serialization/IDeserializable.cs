@@ -1,9 +1,8 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.IO;
-using System.Threading.Tasks;
 
-namespace NuggetOfficial.Actions.Serialization.Interfaces
+namespace NuggetOfficial.Discord.Serialization.Interfaces
 {
 	/// <summary>
 	/// Indicates a class which can be serialized

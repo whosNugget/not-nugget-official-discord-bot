@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace NuggetOfficial.Data
+namespace NuggetOfficial.Discord.Data
 {
 	public enum VoiceRegion
 	{
