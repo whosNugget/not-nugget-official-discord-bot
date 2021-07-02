@@ -5,6 +5,7 @@ using DSharpPlus.Entities;
 using NuggetOfficial.Discord.Commands.VoiceHubModule.Data;
 using NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard;
 using NuggetOfficial.Discord.Serialization;
+using NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -115,8 +116,9 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
 		public async Task ChannelCreationWizard(CommandContext ctx)
 		{
 			CreateChannelWizard wizard = new CreateChannelWizard(ctx, registeredGuildData[ctx.Guild]);
-			VoiceChannelCreationData data = await wizard.StartWizard();
-			await CreateChannelAndMoveMemberAsync(ctx.Guild, ctx.Member, data.UserLimit, 96000, data.SelectedRegion, null);
+			await wizard.SetupWizard();
+			WizardResult result = await wizard.GetResult();
+			await CreateChannelAndMoveMemberAsync(ctx.Guild, ctx.Member, result.UserLimit, result.Bitrate, result.ChannelVoiceRegion, null);
 		}
 
 		[Command("checkperms")] //This command will outline a member's permissions neatly in an embed
