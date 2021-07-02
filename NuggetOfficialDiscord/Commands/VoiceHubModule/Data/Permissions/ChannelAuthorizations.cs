@@ -348,25 +348,25 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data.Permissions
 
             switch (parameters.Publicity)
             {
-                case ChannelPublicity.Public:
+                case ChannelAccessibility.Public:
                     if (!Authorities.HasFlag(ChannelAuthorities.CanCreatePublicChannels))
                     {
                         errorsList.Add("member does not have the authority to create public channels");
                     }
                     break;
-                case ChannelPublicity.Private:
+                case ChannelAccessibility.Private:
                     if (!Authorities.HasFlag(ChannelAuthorities.CanCreatePrivateChannels))
                     {
                         errorsList.Add("member does not have the authority to create private channels");
                     }
                     break;
-                case ChannelPublicity.Supporter:
+                case ChannelAccessibility.Supporter:
                     if (!Authorities.HasFlag(ChannelAuthorities.CanCreateSupporterChannels))
                     {
                         errorsList.Add("member does not have the authority to create supporter channels");
                     }
                     break;
-                case ChannelPublicity.Hidden:
+                case ChannelAccessibility.Hidden:
                     if (!Authorities.HasFlag(ChannelAuthorities.CanCreateHiddenChannels))
                     {
                         errorsList.Add("member does not have the authority to create hidden channels");

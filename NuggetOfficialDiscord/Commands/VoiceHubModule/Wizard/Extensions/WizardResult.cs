@@ -11,7 +11,7 @@ namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard
 		public string ChannelName { get; set; }
 		public int UserLimit { get; set; }
 		public int Bitrate { get; set; }
-		public ChannelPublicity ChannelAccessability { get; set; }
+		public ChannelAccessibility ChannelAccessability { get; set; }
 		public VoiceRegion ChannelVoiceRegion { get; set; }
     }
 }

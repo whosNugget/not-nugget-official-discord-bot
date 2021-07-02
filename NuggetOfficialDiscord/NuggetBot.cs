@@ -7,16 +7,16 @@ using DSharpPlus.Interactivity.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NuggetOfficial.Discord.Bot;
-using NuggetOfficial.Discord.Commands;
+using NuggetOfficial.Discord.Commands.VoiceHubModule;
+using NuggetOfficial.Discord.Commands.VoiceHubModule.Data;
 using NuggetOfficial.Discord.Data.Converters;
-using NuggetOfficial.Discord.Data.VoiceHubModule;
 using NuggetOfficial.Discord.Serialization;
 using System;
 using System.Threading.Tasks;
 
 namespace NuggetOfficial.Discord
 {
-	public class NuggetBot : DiscordBot
+    public class NuggetBot : DiscordBot
 	{
 		readonly VoiceRegisteredGuildData guildDataReference = null;
 
@@ -75,10 +75,11 @@ namespace NuggetOfficial.Discord
 			commands.RegisterConverter(new PermitDenyStringConverter());
 
 			await discord.ConnectAsync();
+
 			//TODO figure out why this isnt authenticated and fix it
 			//await discord.UpdateStatusAsync(new DiscordActivity { Name = "streaming development", ActivityType = ActivityType.Streaming, StreamUrl = "https://twitch.tv/not__nugget"}, UserStatus.Online);
 
-			//TODO need to find a better way to return control without terminating an application
+			//TODO need to find a better way to return control without terminating an application, like potentially opening the bot in a new thread, but how does that effect async/await?
 			await Task.Delay(-1);
 		}
 
@@ -97,7 +98,7 @@ namespace NuggetOfficial.Discord
 			}
 
 			//log the error
-			client.Logger.Log(LogLevel.Information, error);
+			client.Logger.Log(LogLevel.Error, error);
 		}
 	}
 }

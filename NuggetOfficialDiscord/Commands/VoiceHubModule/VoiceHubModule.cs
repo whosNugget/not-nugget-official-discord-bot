@@ -127,7 +127,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
 
 		//TODO create version for rename
 		[Command("createvc")]
-		public async Task CreateVC(CommandContext ctx, ChannelPublicity publicity = ChannelPublicity.Public, int? maxUsers = 0, int? bitrate = 64000, VoiceRegion region = VoiceRegion.Automatic, params DiscordMember[] permittedMembers)
+		public async Task CreateVC(CommandContext ctx, ChannelAccessibility publicity = ChannelAccessibility.Public, int? maxUsers = 0, int? bitrate = 64000, VoiceRegion region = VoiceRegion.Automatic, params DiscordMember[] permittedMembers)
 		{
 			List<KeyValuePair<string, string>> embedResponseFields = new List<KeyValuePair<string, string>>(10);
 			MessageType messageType = MessageType.Success;
@@ -186,7 +186,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
 		//TODO implement
 		//TODO add overloads for every single param combo
 		[Command("updatevc")]
-		public async Task UpdateVC(CommandContext ctx, ChannelPublicity publicity = ChannelPublicity.Public, int? maxUsers = 0, int? bitrate = 64000, VoiceRegion region = VoiceRegion.Automatic)
+		public async Task UpdateVC(CommandContext ctx, ChannelAccessibility publicity = ChannelAccessibility.Public, int? maxUsers = 0, int? bitrate = 64000, VoiceRegion region = VoiceRegion.Automatic)
 		{
 			await RespondAsync(ctx.Message, "NYI");
 		}
@@ -325,7 +325,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
 			return registeredGuildData[ctx.Guild].CommandListenChannel.Equals(ctx.Channel);
 		}
 
-		bool ValidateVCParameterInput(DiscordGuild guild, ChannelPublicity publicity, int? maxUsers, int? bitrate, VoiceRegion region, out string[] error)
+		bool ValidateVCParameterInput(DiscordGuild guild, ChannelAccessibility publicity, int? maxUsers, int? bitrate, VoiceRegion region, out string[] error)
 		{
 			//error = string.Empty;
 
@@ -362,14 +362,14 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
 		}
 
 		//TODO need a better way to store/specify permissions, and preferably one where no permissions is left out (because of my OCD)
-		List<DiscordOverwriteBuilder> GeneratePermissionOverwrites(DiscordGuild guild, DiscordMember creator, ChannelPublicity publicity, params DiscordMember[] permittedMembers)
+		List<DiscordOverwriteBuilder> GeneratePermissionOverwrites(DiscordGuild guild, DiscordMember creator, ChannelAccessibility publicity, params DiscordMember[] permittedMembers)
 		{
 			//TODO implement the ranking method that allows moderators to specify what roles have access to naming capabilities, publicity options, and bitrate options
 			List<DiscordOverwriteBuilder> channelPermissionsBuilderList = new List<DiscordOverwriteBuilder>
 			{
 				new DiscordOverwriteBuilder(guild.EveryoneRole).Deny(Permissions.AccessChannels | Permissions.UseVoice), //Prevent everyone from viewing any channel
-				new DiscordOverwriteBuilder(registeredGuildData[guild].MemberRole).Allow(publicity == ChannelPublicity.Hidden ? Permissions.None : Permissions.AccessChannels).Deny(publicity == ChannelPublicity.Private ? Permissions.UseVoice : Permissions.None).Deny(publicity == ChannelPublicity.Hidden ? Permissions.AccessChannels : Permissions.None), //Allow members to see private channels
-				new DiscordOverwriteBuilder(registeredGuildData[guild].MutedRole).Allow(publicity == ChannelPublicity.Hidden ? Permissions.None : Permissions.AccessChannels).Deny(Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection | Permissions.Stream) //Dissallow muted members from accessing or viewing
+				new DiscordOverwriteBuilder(registeredGuildData[guild].MemberRole).Allow(publicity == ChannelAccessibility.Hidden ? Permissions.None : Permissions.AccessChannels).Deny(publicity == ChannelAccessibility.Private ? Permissions.UseVoice : Permissions.None).Deny(publicity == ChannelAccessibility.Hidden ? Permissions.AccessChannels : Permissions.None), //Allow members to see private channels
+				new DiscordOverwriteBuilder(registeredGuildData[guild].MutedRole).Allow(publicity == ChannelAccessibility.Hidden ? Permissions.None : Permissions.AccessChannels).Deny(Permissions.UseVoice | Permissions.Speak | Permissions.UseVoiceDetection | Permissions.Stream) //Dissallow muted members from accessing or viewing
 			};
 
 			//TODO this might be redundant...need to test if the muted role overwrite will disallow the muted role from joining even if this allows them...though i think i know the behavior that the role system will produce
@@ -383,7 +383,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
 			return channelPermissionsBuilderList;
 		}
 
-		bool ValidateMemberCreationPermissions(DiscordGuild guild, DiscordMember member, string channelName, ChannelPublicity requestedPublicity, VoiceRegion requestedRegion, out string[] errors)
+		bool ValidateMemberCreationPermissions(DiscordGuild guild, DiscordMember member, string channelName, ChannelAccessibility requestedPublicity, VoiceRegion requestedRegion, out string[] errors)
 		{
 			return registeredGuildData[guild].CheckPermission(member, new ChannelCreationParameters(), out errors);
 		}

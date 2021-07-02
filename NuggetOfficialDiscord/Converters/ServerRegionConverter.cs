@@ -1,6 +1,7 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Converters;
 using DSharpPlus.Entities;
+using NuggetOfficial.Discord.Commands.VoiceHubModule.Data;
 using System.Threading.Tasks;
 
 namespace NuggetOfficial.Discord.Data.Converters

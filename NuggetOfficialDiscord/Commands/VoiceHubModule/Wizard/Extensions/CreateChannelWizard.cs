@@ -238,23 +238,23 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
             return region;
         }
 
-        private ChannelPublicity GetChannelAccessabilityFromEmoji(DiscordEmoji emoji)
+        private ChannelAccessibility GetChannelAccessabilityFromEmoji(DiscordEmoji emoji)
         {
-            ChannelPublicity publicity = ChannelPublicity.Unknown;
+            ChannelAccessibility publicity = ChannelAccessibility.Unknown;
 
             switch (emoji.Name)
             {
                 case ":unlock:":
-                    publicity = ChannelPublicity.Public;
+                    publicity = ChannelAccessibility.Public;
                     break;
                 case ":closed_lock_with_key:":
-                    publicity = ChannelPublicity.Private;
+                    publicity = ChannelAccessibility.Private;
                     break;
                 case ":lock_with_ink_pen:":
-                    publicity = ChannelPublicity.Hidden;
+                    publicity = ChannelAccessibility.Hidden;
                     break;
                 case ":gem:":
-                    publicity = ChannelPublicity.Supporter;
+                    publicity = ChannelAccessibility.Supporter;
                     break;
                 default:
                     result.Valid = false;
@@ -328,7 +328,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
             int userAuthInt = (int)(authorities & ChannelAuthorities.CanCreateAnyChannel);
             if (userAuthInt == 32 || userAuthInt == 64 || userAuthInt == 128 || userAuthInt == 256)
             {
-                this.result.ChannelAccessability = userAuthInt == 32 ? ChannelPublicity.Private : userAuthInt == 64 ? ChannelPublicity.Public : userAuthInt == 128 ? ChannelPublicity.Hidden : ChannelPublicity.Supporter;
+                this.result.ChannelAccessability = userAuthInt == 32 ? ChannelAccessibility.Private : userAuthInt == 64 ? ChannelAccessibility.Public : userAuthInt == 128 ? ChannelAccessibility.Hidden : ChannelAccessibility.Supporter;
                 return;
             }
 

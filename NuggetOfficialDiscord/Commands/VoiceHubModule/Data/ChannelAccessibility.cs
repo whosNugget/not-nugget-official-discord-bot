@@ -1,6 +1,6 @@
 ﻿namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 {
-	public enum ChannelPublicity
+	public enum ChannelAccessibility
 	{
 		Unknown,
 		Public,
