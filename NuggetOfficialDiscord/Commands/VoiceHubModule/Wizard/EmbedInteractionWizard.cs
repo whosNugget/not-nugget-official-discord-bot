@@ -8,23 +8,34 @@ using System.Threading.Tasks;
 
 namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard
 {
-	public abstract class EmbedInteractionWizard<T> where T : struct
+	public abstract class EmbedInteractionWizard<T> where T : struct, IWizardResult
 	{
 		protected readonly CommandContext context;
 
 		protected readonly List<Func<Task>> wizardSteps;
 
+		protected DiscordChannel responseChannel;
 		protected DiscordMessage interactionMessage;
 		protected T result;
 
 		public EmbedInteractionWizard(CommandContext context)
 		{
 			this.context = context;
+			responseChannel = context.Channel;
 			wizardSteps = new List<Func<Task>>();
 			result = new T();
 		}
+		public EmbedInteractionWizard(CommandContext context, DiscordChannel responseChannel) : this(context)
+		{
+			if (responseChannel is null)
+			{
+				throw new ArgumentNullException(nameof(responseChannel), "explicit response channel cannot be null");
+			}
 
-		public virtual Task SetupWizard() => Task.CompletedTask;
+			this.responseChannel = responseChannel;
+		}
+
+		public virtual async Task SetupWizard() => await Task.CompletedTask;
 		public virtual async Task<T> GetResult() => await Task.FromResult(result);
 
 		protected virtual Task PreStep() => Task.CompletedTask;

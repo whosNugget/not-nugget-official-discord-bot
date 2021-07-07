@@ -15,7 +15,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
     /// <summary>
     /// Channel creation wizard object. Use this object to initialize and advance the wizard steps
     /// </summary>
-    public class CreateChannelWizard : EmbedInteractionWizard<WizardResult>
+    public class CreateChannelWizard : EmbedInteractionWizard<CreateChannelWizardResult>
     {
         #region Emoji
         private static bool emojiPopulated = false;
@@ -48,18 +48,28 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
         private static DiscordEmoji uswest;
         //
         private static IEnumerable<DiscordEmoji> regionList;
-        #endregion
+		#endregion
 
-        private readonly ChannelAuthorities authorities;
+		#region Private variables
+		private readonly ChannelAuthorities authorities;
+		#endregion
 
-        public CreateChannelWizard(CommandContext context, GuildData guildData) : base(context)
+		#region Constructors
+		//TODO see if it is possible to remove this duplicated code
+		public CreateChannelWizard(CommandContext context, GuildData guildData) : base(context)
         {
             authorities = guildData.GetMemberPermissions(context.Member).Authorities;
             if (!emojiPopulated) PopulateEmoji();
         }
+        public CreateChannelWizard(CommandContext context, DiscordChannel channel, GuildData guildData) : base(context, channel)
+		{
+            authorities = guildData.GetMemberPermissions(context.Member).Authorities;
+            if (!emojiPopulated) PopulateEmoji();
+        }
+		#endregion
 
-        #region Overrides
-        public override async Task SetupWizard()
+		#region Overrides
+		public override async Task SetupWizard()
         {
             if (authorities == ChannelAuthorities.CompletelyUnauthorized || !authorities.HasFlag(ChannelAuthorities.CanCreateChannels))
             {
@@ -75,7 +85,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
             wizardSteps.AddRange(CreateWizardSteps());
         }
 
-        public override async Task<WizardResult> GetResult()
+        public override async Task<CreateChannelWizardResult> GetResult()
         {
             int stepIndex = 0;
             do

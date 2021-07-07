@@ -117,7 +117,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
 		{
 			CreateChannelWizard wizard = new CreateChannelWizard(ctx, registeredGuildData[ctx.Guild]);
 			await wizard.SetupWizard();
-			WizardResult result = await wizard.GetResult();
+			CreateChannelWizardResult result = await wizard.GetResult();
 			await CreateChannelAndMoveMemberAsync(ctx.Guild, ctx.Member, result.UserLimit, result.Bitrate, result.ChannelVoiceRegion, null);
 		}
 

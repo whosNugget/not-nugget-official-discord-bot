@@ -2,7 +2,7 @@
 
 namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard
 {
-	public struct WizardResult
+	public struct CreateChannelWizardResult : IWizardResult
 	{
 		public bool Valid { get; set; }
 		public WizardInvalidationReason InvalidationReason { get; set; }
