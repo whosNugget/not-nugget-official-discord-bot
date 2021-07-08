@@ -3,9 +3,12 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using NuggetOfficial.Discord.Commands.VoiceHubModule.Data;
+using NuggetOfficial.Discord.Commands.VoiceHubModule.Data.Permissions;
 using NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard;
 using NuggetOfficial.Discord.Serialization;
+using NuggetOfficialDiscord.Commands.VoiceHubModule.Data;
 using NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard;
+using NuggetOfficialDiscord.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,56 +37,85 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
             await ctx.TriggerTypingAsync();
         }
         #endregion
-        //Bot should automatically serialize data as soon as a new server is registerred, and update the serialization every time a change is made to the permissions,
-        //channels, or any other data that is stored on the file system
-        //[Command("testserialize")]
-        //public async Task TestSerialize(CommandContext ctx)
-        //{
-        //	SerializationResult result = Serializer.Serialize("Data/Voice/GuildData/guild_data.json", registeredGuildData);
-        //	MessageType messageType = result.Success ? MessageType.Success : MessageType.Error;
-        //	await ctx.RespondAsync(CreateEmbedMessage(ctx, messageType, "Serialization Output", new List<KeyValuePair<string, string>>(new[] { new KeyValuePair<string, string>("JSON result", $"{(result.Success ? "Success" : "Error: ")}{result.ErrorMessage}") })));
-        //}
         #region Guild registration
-        [Command("registerguild")]
-        public async Task RegisterGuild(CommandContext ctx, DiscordChannel logChannel, DiscordChannel parentCategory, DiscordChannel waitingRoomVC, DiscordChannel commandListenChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole)
-        {
-            //store the log channel
-            await RegisterGuild(ctx, parentCategory, waitingRoomVC, commandListenChannel, memberRole, mutedRole, botManagerRole);
-        }
-        [Command("registerguild")]
+        [Command("registerguild"), RequirePermissions(Permissions.Administrator)]
         public async Task RegisterGuild(CommandContext ctx, DiscordChannel parentCategory, DiscordChannel waitingRoomVC, DiscordChannel commandListenChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole)
         {
-            //    MessageType messageType = MessageType.Success;
-            //    List<KeyValuePair<string, string>> embedContent = new List<KeyValuePair<string, string>>();
+            await RegisterGuild(ctx, parentCategory, waitingRoomVC, commandListenChannel, null, memberRole, mutedRole, botManagerRole);
+        }
+        [Command("registerguild"), RequirePermissions(Permissions.Administrator)]
+        public async Task RegisterGuild(CommandContext ctx, DiscordChannel loggingChannel, DiscordChannel parentCategory, DiscordChannel waitingRoomVC, DiscordChannel commandListenChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole)
+        {
+            DiscordEmbedBuilder builder = GetDefaultEmbedBuilder(ctx, "Register Guild");
 
-            //    if (!registeredGuildData.RegisterGuild(ctx.Guild, parentCategory, waitingRoomVC, commandListenChannel, memberRole, mutedRole, botManagerRole, out string error))
-            //    {
-            //        await ctx.Message.RespondAsync(error);
-            //        goto Completed;
-            //    }
+            if (registeredGuildData.RegisterGuild(ctx.Guild, parentCategory, waitingRoomVC, commandListenChannel, loggingChannel, memberRole, mutedRole, botManagerRole, out string error))
+            {
+                ChannelAuthorizations everyoneAuthorization = ChannelAuthorizations.Unauthorized;
+                KeyValuePair<DiscordRole, ChannelAuthorizations>[] rolewiseAuthorizations = new KeyValuePair<DiscordRole, ChannelAuthorizations>[]
+                {
+                    KeyValuePair.Create
+                    (
+                        memberRole,
+                        new ChannelAuthorizations
+                        (
+                            ChannelAuthorities.CanCreateChannels |
+                            ChannelAuthorities.CanCreateSingleChannel |
+                            ChannelAuthorities.CanCreatePrivateChannels
+                        )
+                    ),
+                    KeyValuePair.Create
+                    (
+                        mutedRole,
+                        ChannelAuthorizations.Unauthorized
+                    ),
+                    KeyValuePair.Create
+                    (
+                        botManagerRole,
+                        ChannelAuthorizations.Authorized
+                    )
+                };
+                KeyValuePair<DiscordMember, ChannelAuthorizations>[] memberwiseAuthorizations = new KeyValuePair<DiscordMember, ChannelAuthorizations>[]
+                {
+                    KeyValuePair.Create
+                    (
+                        ctx.Member,
+                        ChannelAuthorizations.Authorized
+                    )
+                };
 
-            //    registeredGuildData[ctx.Guild].InitializePermissions(VoiceChannelConfigurationPermissions.Unauthorized, new[] { new KeyValuePair<DiscordRole, VoiceChannelConfigurationPermissions>(memberRole, new VoiceChannelConfigurationPermissions(ChannelCreationAuthority.Authorized, ChannelRenameAuthority.Unauthorized, ChannelCreationQuantityAuthority.Single, ChannelAccesibilityConfigurationAuthority.Private, ChannelRegionConfigurationAuthority.Unauthorized, ChannelBitrateConfigurationAuthority.Unaurhotized)), new KeyValuePair<DiscordRole, VoiceChannelConfigurationPermissions>(mutedRole, VoiceChannelConfigurationPermissions.Unauthorized), new KeyValuePair<DiscordRole, VoiceChannelConfigurationPermissions>(botManagerRole, VoiceChannelConfigurationPermissions.Authorized) }, new[] { new KeyValuePair<DiscordMember, VoiceChannelConfigurationPermissions>(ctx.Member, VoiceChannelConfigurationPermissions.Authorized) });
+                registeredGuildData[ctx.Guild].InitializePermissions(everyoneAuthorization, rolewiseAuthorizations, memberwiseAuthorizations);
 
-            //    if (error == string.Empty)
-            //    {
-            //        embedContent.AddRange(new[]
-            //        {
-            //            new KeyValuePair<string, string>("Guild", $"{ctx.Guild.Name} - {ctx.Guild.Id}"),
-            //            new KeyValuePair<string, string>("Parent Category", $"{parentCategory?.Mention ?? "null"} - {parentCategory?.Id}"),
-            //            new KeyValuePair<string, string>("Waiting Room VC", $"{waitingRoomVC?.Mention ?? "null"} - {waitingRoomVC?.Id}"),
-            //            new KeyValuePair<string, string>("Command Listen Channel", $"{commandListenChannel?.Mention ?? "null"} - {waitingRoomVC?.Id}"),
-            //            new KeyValuePair<string, string>("Member Role", $"{memberRole.Mention} - {memberRole?.Id}"),
-            //            new KeyValuePair<string, string>("Muted Role", $"{mutedRole.Mention} - {mutedRole.Id}"),
-            //            new KeyValuePair<string, string>("Bot Manager Role", $"{botManagerRole.Mention} - {botManagerRole.Id}")
-            //        });
-            //        goto Completed;
-            //    }
+                if (await SerializeModifiedGuildData(ctx, loggingChannel ?? ctx.Channel))
+                {
+                    builder.WithColor(DiscordColor.Green)
+                           .WithDescription($"Successfully registered guild \"{ctx.Guild.Name}\" ({ctx.Guild.Id})")
+                           .AddField("VC Parent Category", parentCategory.Mention)
+                           .AddField("Waiting Room VC", waitingRoomVC.Mention)
+                           .AddField("Command Channel", commandListenChannel.Mention)
+                           .AddField("Member Role", memberRole.Mention)
+                           .AddField("Muted Role", memberRole.Mention)
+                           .AddField("Bot Manager Role", botManagerRole.Mention)
+                           .AddField("", "")
+                           .AddField("Default Everyone Permissions", everyoneAuthorization.ToString())
+                           .AddField("", "")
+                           .AddField("Default Rolewise Permissions", "You can use !permit to change these, or add more")
+                           .AddFields(rolewiseAuthorizations)
+                           .AddField("", "")
+                           .AddField("Default Memberwise Permissions", "You can use !permit to change these, or add more")
+                           .AddFields(memberwiseAuthorizations);
 
-            //    embedContent.Add(new KeyValuePair<string, string>("Error", error));
+                    await ctx.Channel.SendMessageAsync(builder.Build());
 
-            //Completed:
-            //    await ctx.Message.RespondAsync(CreateEmbedMessage(ctx, messageType, $"Registering guild \"{ctx.Guild.Name}\" ({ctx.Guild.Id})", embedContent));
-            //    return;
+                    return;
+                }
+            }
+
+            builder.WithColor(DiscordColor.Red)
+                   .WithFooter("Command Error")
+                   .WithDescription($"Could not register guild \"{ctx.Guild.Name}\" ({ctx.Guild.Id})")
+                   .AddField("Error:", error);
+
+            await ctx.Message.RespondAsync(builder.Build());
         }
         #endregion
         #region Member/Role Permissions
@@ -114,9 +146,21 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
             return await wizard.GetResult();
         }
         #endregion
-        private bool SerializeModifiedGuildData()
+        private async Task<bool> SerializeModifiedGuildData(CommandContext ctx, DiscordChannel loggingChannel)
         {
-            return false;
+            SerializationResult result = Serializer.Serialize("Data/Voice/GuildData/guild_data.json", registeredGuildData);
+
+            if (!result.Success)
+            {
+                DiscordEmbedBuilder builder = GetDefaultEmbedBuilder(ctx, "Serialization Unsuccesful");
+                builder.WithDescription($"{nameof(VoiceHubModule)}.{nameof(SerializeModifiedGuildData)}: serialization of updated {nameof(RegisteredGuildData)} was unsuccessful")
+                       .AddField("Error", result.ErrorMessage)
+                       .WithFooter("Serialization Error");
+
+                await loggingChannel.SendMessageAsync(builder.Build());
+            }
+
+            return result.Success;
         }
         #endregion
         #region User Actions
@@ -202,9 +246,11 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
         //}
 
         //TODO implement
+        #region Whitelist
         [Command("whitelist")]
-        public async Task Whitelist(CommandContext ctx, params DiscordMember[] memberList)
+        public async Task Whitelist(CommandContext ctx, WhitelistOperation operation, params DiscordMember[] memberList)
         {
+            if (operation == WhitelistOperation.Unknown) return; //TODO error
             //check if the calling member has a channel
             //check if the channel is private or hidden
             //loop over each member in the list and give them the connect, speak, and voice activation detection permissions and remove the rest if they aren't muted
@@ -213,11 +259,11 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
             await RespondAsync(ctx.Message, "NYI");
         }
         [Command("whitelist")]
-        public async Task Whitelist(CommandContext ctx, DiscordChannel channel, params DiscordMember[] memberList)
+        public async Task Whitelist(CommandContext ctx, WhitelistOperation operation, DiscordChannel channel, params DiscordMember[] memberList)
         {
             await RespondAsync(ctx.Message, "NYI");
         }
-
+        #endregion
         [Command("deletevc")]
         public async Task DeleveVC(CommandContext ctx, DiscordChannel targetChannel = null)
         {
@@ -303,6 +349,11 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
         #endregion
 
         #region Synchronous Private Methods
+        private DiscordEmbedBuilder GetDefaultEmbedBuilder(CommandContext ctx, string title)
+        {
+            return new DiscordEmbedBuilder().WithTitle(title).WithAuthor(ctx.Client.CurrentUser.Username, null, ctx.Client.CurrentUser.AvatarUrl).WithThumbnail(ctx.Guild.IconUrl);
+        }
+
         bool ValidateServerRegistered(CommandContext ctx)
         {
             return !(registeredGuildData[ctx.Guild] is null);

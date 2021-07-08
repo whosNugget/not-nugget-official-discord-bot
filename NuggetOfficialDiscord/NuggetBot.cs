@@ -34,7 +34,7 @@ namespace NuggetOfficial.Discord
 		}
 
 		/// <summary>
-		/// Run the bot. Currently, this method never returns controll to the calling class. This will not always be the case, but 
+		/// Run the bot. Currently, this method never returns control to the calling class. This might not always be the case, but...
 		/// </summary>
 		/// <param name="botToken"></param>
 		/// <returns></returns>

@@ -1,6 +1,6 @@
 ﻿namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 {
-	public class VoiceChannelModuleSettings
+	public class VoiceModuleGuildSettings
     {
         /// <summary>
         /// Should members who are attempting to create VCs be required to execute commands within a specified channel? All command invocations will be met with an error or

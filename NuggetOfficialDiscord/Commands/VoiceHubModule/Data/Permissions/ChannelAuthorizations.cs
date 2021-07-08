@@ -9,8 +9,8 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data.Permissions
     [JsonObject]
     public class ChannelAuthorizations
     {
-        public static ChannelAuthorities Authorized => ChannelAuthorities.CompletelyAuthorized;
-        public static ChannelAuthorities Unauthorized => ChannelAuthorities.CompletelyUnauthorized;
+        public static ChannelAuthorizations Authorized => new ChannelAuthorizations(ChannelAuthorities.CompletelyAuthorized);
+        public static ChannelAuthorizations Unauthorized => new ChannelAuthorizations(ChannelAuthorities.CompletelyUnauthorized);
 
         [JsonProperty("authorities")]
         public ChannelAuthorities Authorities { get; private set; }
@@ -101,6 +101,11 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data.Permissions
 
         MajorAuthorityViolationOccurred:
             return (errors = errorsList.ToArray()).Length == 0;
+        }
+
+        public override string ToString()
+        {
+            return $"Authorizations: {Authorities}";
         }
     }
 }

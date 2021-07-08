@@ -56,7 +56,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 		/// <param name="commandListenChannel">The chat channel that the bot will respond to commands in</param>
 		/// <param name="error">If an error occurs while registering the guild, this field will be populated</param>
 		/// <returns>True when no error occurs during registration</returns>
-		public bool RegisterGuild(DiscordGuild toRegister, DiscordChannel parentCategory, DiscordChannel waitingRoomVc, DiscordChannel commandListenChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole, out string error)
+		public bool RegisterGuild(DiscordGuild toRegister, DiscordChannel parentCategory, DiscordChannel waitingRoomVc, DiscordChannel commandListenChannel, DiscordChannel loggingChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole, out string error)
 		{
 			error = string.Empty;
 
@@ -72,7 +72,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 				goto Completed;
 			}
 
-			RegisteredGuilds.Add(toRegister, new GuildData(parentCategory, waitingRoomVc, commandListenChannel, memberRole, mutedRole, botManagerRole));
+			RegisteredGuilds.Add(toRegister, new GuildData(parentCategory, waitingRoomVc, commandListenChannel, loggingChannel, memberRole, mutedRole, botManagerRole));
 
 		Completed:
 			return error == string.Empty;
@@ -248,10 +248,14 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 		/// The text channel the bot will respond to commands in
 		/// </summary>
 		public DiscordChannel CommandListenChannel { get; private set; }
-		/// <summary>
-		/// A role that specifies a general member. The bot will not take action on messages sent if the sender doesn't have this role
+        /// <summary>
+		/// The channel that the bot should log it's actions to in addition to logging to the default audit log. If logging is not desired, this can be set to null
 		/// </summary>
-		public DiscordRole MemberRole { get; private set; }
+		public DiscordChannel LoggingChannel { get; private set; }
+        /// <summary>
+        /// A role that specifies a general member. The bot will not take action on messages sent if the sender doesn't have this role
+        /// </summary>
+        public DiscordRole MemberRole { get; private set; }
 		/// <summary>
 		/// A role that specifies a muted member. The bot will not take actions on messages sent if the sender has this role, and will dissalow members with this role from joining any created channel
 		/// </summary>
@@ -301,11 +305,12 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 		/// <param name="commandListenChannel"></param>
 		/// <param name="memberRole"></param>
 		/// <param name="mutedRole"></param>
-		public GuildData(DiscordChannel parentCategory, DiscordChannel waitingRoomVc, DiscordChannel commandListenChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole)
+		public GuildData(DiscordChannel parentCategory, DiscordChannel waitingRoomVc, DiscordChannel commandListenChannel, DiscordChannel loggingChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole)
 		{
 			ParentCategory = parentCategory;
 			WaitingRoomVC = waitingRoomVc;
 			CommandListenChannel = commandListenChannel;
+			LoggingChannel = loggingChannel;
 			MemberRole = memberRole;
 			MutedRole = mutedRole;
 			BotManagerRole = botManagerRole;
@@ -320,12 +325,13 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 		/// <param name="parentCategory"></param>
 		/// <param name="waitingRoomVc"></param>
 		/// <param name="commandListenChannel"></param>
+		/// <param name="loggingChannel"></param>
 		/// <param name="memberRole"></param>
 		/// <param name="mutedRole"></param>
 		/// <param name="everyonePermission"></param>
 		/// <param name="rolewisePermissions"></param>
 		/// <param name="memberwisePermissions"></param>
-		public GuildData(DiscordChannel parentCategory, DiscordChannel waitingRoomVc, DiscordChannel commandListenChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole, ChannelAuthorizations everyonePermission, IEnumerable<KeyValuePair<DiscordRole, ChannelAuthorizations>> rolewisePermissions, IEnumerable<KeyValuePair<DiscordMember, ChannelAuthorizations>> memberwisePermissions) : this(parentCategory, waitingRoomVc, commandListenChannel, memberRole, mutedRole, botManagerRole)
+		public GuildData(DiscordChannel parentCategory, DiscordChannel waitingRoomVc, DiscordChannel commandListenChannel, DiscordChannel loggingChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole, ChannelAuthorizations everyonePermission, IEnumerable<KeyValuePair<DiscordRole, ChannelAuthorizations>> rolewisePermissions, IEnumerable<KeyValuePair<DiscordMember, ChannelAuthorizations>> memberwisePermissions) : this(parentCategory, waitingRoomVc, commandListenChannel, loggingChannel, memberRole, mutedRole, botManagerRole)
 		{
 			InitializePermissions(everyonePermission, rolewisePermissions, memberwisePermissions);
 		}
@@ -335,6 +341,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 		/// <param name="parentCategory"></param>
 		/// <param name="waitingRoomVc"></param>
 		/// <param name="commandListenChannel"></param>
+		/// <param name="loggingChannel"></param>
 		/// <param name="memberRole"></param>
 		/// <param name="mutedRole"></param>
 		/// <param name="botManagerRole"></param>
@@ -342,7 +349,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 		/// <param name="rolewisePermissions"></param>
 		/// <param name="memberwisePermissions"></param>
 		/// <param name="createdChannels"></param>
-		internal GuildData(DiscordChannel parentCategory, DiscordChannel waitingRoomVc, DiscordChannel commandListenChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole, ChannelAuthorizations everyonePermission, IEnumerable<KeyValuePair<DiscordRole, ChannelAuthorizations>> rolewisePermissions, IEnumerable<KeyValuePair<DiscordMember, ChannelAuthorizations>> memberwisePermissions, IEnumerable<KeyValuePair<DiscordMember, List<DiscordChannel>>> createdChannels) : this(parentCategory, waitingRoomVc, commandListenChannel, memberRole, mutedRole, botManagerRole, everyonePermission, rolewisePermissions, memberwisePermissions)
+		internal GuildData(DiscordChannel parentCategory, DiscordChannel waitingRoomVc, DiscordChannel commandListenChannel, DiscordChannel loggingChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole, ChannelAuthorizations everyonePermission, IEnumerable<KeyValuePair<DiscordRole, ChannelAuthorizations>> rolewisePermissions, IEnumerable<KeyValuePair<DiscordMember, ChannelAuthorizations>> memberwisePermissions, IEnumerable<KeyValuePair<DiscordMember, List<DiscordChannel>>> createdChannels) : this(parentCategory, waitingRoomVc, commandListenChannel, loggingChannel, memberRole, mutedRole, botManagerRole, everyonePermission, rolewisePermissions, memberwisePermissions)
 		{
 			CreatedChannels = new Dictionary<DiscordMember, List<DiscordChannel>>(createdChannels);
 		}
@@ -524,24 +531,14 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 
 	//TODO own file
 	[JsonObject("snowflake_container")]
-	public struct SnowflakeContainer<T> where T : SnowflakeObject
+	public struct SnowflakeContainer
 	{
 		[JsonProperty("snowflake_id")]
 		public ulong ID { get; private set; }
-		[JsonProperty("snowflake_type")]
-		public Type SnowflakeType { get; private set; }
 
-		public SnowflakeContainer(T snowflakeObject)
+		public SnowflakeContainer(SnowflakeObject snowflake)
 		{
-			if (snowflakeObject is null)
-			{
-				ID = 0;
-				SnowflakeType = null;
-				return;
-			}
-
-			ID = snowflakeObject.Id;
-			SnowflakeType = typeof(T);
+			ID = snowflake is null ? ulong.MinValue : snowflake.Id;
 		}
 	}
 
@@ -549,23 +546,25 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 	public class GuildDataSerializableContainer
 	{
 		[JsonProperty("parent_category")]
-		public SnowflakeContainer<DiscordChannel> ParentCategoryContainer { get; private set; }
+		public SnowflakeContainer ParentCategoryContainer { get; private set; }
 		[JsonProperty("command_listen_channel")]
-		public SnowflakeContainer<DiscordChannel> CommandListenChannelContainer { get; private set; }
+		public SnowflakeContainer CommandListenChannelContainer { get; private set; }
 		[JsonProperty("waiting_room_vc")]
-		public SnowflakeContainer<DiscordChannel> WaitingRoomVCContainer { get; private set; }
+		public SnowflakeContainer WaitingRoomVCContainer { get; private set; }
+		[JsonProperty("logging_channel")]
+		public SnowflakeContainer LoggingChannelContainer { get; private set; }
 		[JsonProperty("member_role")]
-		public SnowflakeContainer<DiscordRole> MemberRoleContainer { get; private set; }
+		public SnowflakeContainer MemberRoleContainer { get; private set; }
 		[JsonProperty("muted_role")]
-		public SnowflakeContainer<DiscordRole> MutedRoleContainer { get; private set; }
+		public SnowflakeContainer MutedRoleContainer { get; private set; }
 		[JsonProperty("bot_manager_role")]
-		public SnowflakeContainer<DiscordRole> BotManagerRoleContainer { get; private set; }
+		public SnowflakeContainer BotManagerRoleContainer { get; private set; }
 
 		[JsonProperty("everyone_permission")]
 		public ChannelAuthorizations EveryonePermission { get; private set; }
 
 		[JsonProperty("member_channels")]
-		public Dictionary<ulong, List<SnowflakeContainer<DiscordChannel>>> CreatedChannelsContainer { get; private set; }
+		public Dictionary<ulong, List<SnowflakeContainer>> CreatedChannelsContainer { get; private set; }
 		[JsonProperty("rolewise_permissions")]
 		public Dictionary<ulong, ChannelAuthorizations> RolewisePermissionContainer { get; private set; }
 		[JsonProperty("memberwise_permissions")]
@@ -574,25 +573,26 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 		public GuildDataSerializableContainer() { }
 		public GuildDataSerializableContainer(GuildData data)
 		{
-			ParentCategoryContainer = new SnowflakeContainer<DiscordChannel>(data.ParentCategory);
-			CommandListenChannelContainer = new SnowflakeContainer<DiscordChannel>(data.CommandListenChannel);
-			WaitingRoomVCContainer = new SnowflakeContainer<DiscordChannel>(data.WaitingRoomVC);
-			MemberRoleContainer = new SnowflakeContainer<DiscordRole>(data.MemberRole);
-			MutedRoleContainer = new SnowflakeContainer<DiscordRole>(data.MutedRole);
-			BotManagerRoleContainer = new SnowflakeContainer<DiscordRole>(data.MutedRole);
+			ParentCategoryContainer = new SnowflakeContainer(data.ParentCategory);
+			CommandListenChannelContainer = new SnowflakeContainer(data.CommandListenChannel);
+			WaitingRoomVCContainer = new SnowflakeContainer(data.WaitingRoomVC);
+			LoggingChannelContainer = new SnowflakeContainer(data.LoggingChannel);
+			MemberRoleContainer = new SnowflakeContainer(data.MemberRole);
+			MutedRoleContainer = new SnowflakeContainer(data.MutedRole);
+			BotManagerRoleContainer = new SnowflakeContainer(data.MutedRole);
 
 			EveryonePermission = data.EveryonePermission;
 
-			CreatedChannelsContainer = new Dictionary<ulong, List<SnowflakeContainer<DiscordChannel>>>();
+			CreatedChannelsContainer = new Dictionary<ulong, List<SnowflakeContainer>>();
 			RolewisePermissionContainer = new Dictionary<ulong, ChannelAuthorizations>();
 			MemberwisePermissionContainer = new Dictionary<ulong, ChannelAuthorizations>();
 
 			foreach (KeyValuePair<DiscordMember, List<DiscordChannel>> kvp in data.CreatedChannels)
 			{
-				KeyValuePair<ulong, List<SnowflakeContainer<DiscordChannel>>> newAdd = new KeyValuePair<ulong, List<SnowflakeContainer<DiscordChannel>>>(kvp.Key.Id, new List<SnowflakeContainer<DiscordChannel>>());
+				KeyValuePair<ulong, List<SnowflakeContainer>> newAdd = new KeyValuePair<ulong, List<SnowflakeContainer>>(kvp.Key.Id, new List<SnowflakeContainer>());
 				foreach (DiscordChannel channel in kvp.Value)
 				{
-					newAdd.Value.Add(new SnowflakeContainer<DiscordChannel>(channel));
+					newAdd.Value.Add(new SnowflakeContainer(channel));
 				}
 				CreatedChannelsContainer.Add(newAdd.Key, newAdd.Value);
 			}
@@ -613,13 +613,14 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 		/// <returns>A Task representing the rebuilt <see cref="GuildData"/> from deserialized data</returns>
 		public async Task<GuildData> CreateGuildDataAsync(DiscordGuild workingGuild)
 		{
-			//TODO need to do a but ton of error checking and shidma here...just run this through quick to ensure it works
+			//TODO need to do a butt ton of error checking and shidma here...just run this through quick to ensure it works
 
 			if (workingGuild is null) return null;
 
 			DiscordChannel parentCategory = workingGuild.GetChannel(ParentCategoryContainer.ID);
 			DiscordChannel waitingRoomVC = workingGuild.GetChannel(WaitingRoomVCContainer.ID);
 			DiscordChannel commandListenChannel = workingGuild.GetChannel(CommandListenChannelContainer.ID);
+			DiscordChannel loggingChannel = workingGuild.GetChannel(LoggingChannelContainer.ID);
 			DiscordRole memberRole = workingGuild.GetRole(MemberRoleContainer.ID);
 			DiscordRole mutedRole = workingGuild.GetRole(MutedRoleContainer.ID);
 			DiscordRole botManagerRole = workingGuild.GetRole(BotManagerRoleContainer.ID);
@@ -631,7 +632,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 			foreach (var kvp in CreatedChannelsContainer)
 			{
 				List<DiscordChannel> memberChannels = new List<DiscordChannel>();
-				foreach (SnowflakeContainer<DiscordChannel> channelContainer in kvp.Value)
+				foreach (SnowflakeContainer channelContainer in kvp.Value)
 				{
 					memberChannels.Add(workingGuild.GetChannel(channelContainer.ID));
 				}
@@ -646,7 +647,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 				memberwisePermissions.Add(await workingGuild.GetMemberAsync(kvp.Key), kvp.Value);
 			}
 
-			return new GuildData(parentCategory, waitingRoomVC, commandListenChannel, memberRole, mutedRole, botManagerRole, EveryonePermission, rolewisePermissions, memberwisePermissions, createdChannels);
+			return new GuildData(parentCategory, waitingRoomVC, commandListenChannel, loggingChannel, memberRole, mutedRole, botManagerRole, EveryonePermission, rolewisePermissions, memberwisePermissions, createdChannels);
 		}
 	}
 }
