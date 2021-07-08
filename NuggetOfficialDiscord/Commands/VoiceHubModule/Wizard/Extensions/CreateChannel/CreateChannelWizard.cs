@@ -17,40 +17,11 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
     /// </summary>
     public class CreateChannelWizard : EmbedInteractionWizard<CreateChannelWizardResult>
     {
-        #region Emoji
-        private static bool emojiPopulated = false;
-        //
-        private static DiscordEmoji yes;
-        private static DiscordEmoji no;
-        //
-        private static DiscordEmoji cancel;
-        //
-        private static DiscordEmoji @public;
-        private static DiscordEmoji @private;
-        private static DiscordEmoji hidden;
-        private static DiscordEmoji supporter;
-        //
-        private static DiscordEmoji brazil;
-        private static DiscordEmoji europe;
-        private static DiscordEmoji hongkong;
-        private static DiscordEmoji india;
-        private static DiscordEmoji japan;
-        private static DiscordEmoji russia;
-        private static DiscordEmoji singapore;
-        private static DiscordEmoji southafrica;
-        private static DiscordEmoji sydney;
-        private static DiscordEmoji usa;
-        private static DiscordEmoji auto;
-        //
-        private static DiscordEmoji uscentral;
-        private static DiscordEmoji useast;
-        private static DiscordEmoji ussouth;
-        private static DiscordEmoji uswest;
-        //
-        private static IEnumerable<DiscordEmoji> regionList;
-		#endregion
+        #region Private variables
+        private static readonly string[] channelPublicity = { ":unlock:", ":closed_lock_with_key:", ":lock_with_ink_pen:", ":gem:" };
+        private static readonly string[] regionList = { ":flag_br:", ":flag_eu:", ":flag_hk:", ":flag_in:", ":flag_ru:", ":flag_sg:", ":flag_za:", ":flag_au:", ":flag_us:", ":green_square:" };
+        private static readonly string[] usaSubregionList = { ":arrow_up:", ":arrow_right:", ":arrow_down:", ":arrow_left:" };
 
-		#region Private variables
 		private readonly ChannelAuthorities authorities;
 		#endregion
 
@@ -59,17 +30,44 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
 		public CreateChannelWizard(CommandContext context, GuildData guildData) : base(context)
         {
             authorities = guildData.GetMemberPermissions(context.Member).Authorities;
-            if (!emojiPopulated) PopulateEmoji();
+            if (!emojiPopulated) InitializeEmojiContainer();
         }
         public CreateChannelWizard(CommandContext context, DiscordChannel channel, GuildData guildData) : base(context, channel)
 		{
             authorities = guildData.GetMemberPermissions(context.Member).Authorities;
-            if (!emojiPopulated) PopulateEmoji();
+            if (!emojiPopulated) InitializeEmojiContainer();
         }
 		#endregion
 
 		#region Overrides
-		public override async Task SetupWizard()
+		public override void InitializeEmojiContainer()
+		{
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":white_check_mark:", false), true);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":negative_squared_cross_mark:", false), false);
+            reactionEmotes.SetEmojiValue<object>(DiscordEmoji.FromName(context.Client, ":no_entry_sign:", false), null);
+
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":unlock:", false), ChannelAccessibility.Public);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":closed_lock_with_key:", false), ChannelAccessibility.Private);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":lock_with_ink_pen:", false), ChannelAccessibility.Hidden);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":gem:", false), ChannelAccessibility.Supporter);
+            
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_br:", false), VoiceRegion.Brazil);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_eu:", false), VoiceRegion.Europe);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_hk:", false), VoiceRegion.HongKong);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_in:", false), VoiceRegion.India);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_ru:", false), VoiceRegion.Russia);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_sg:", false), VoiceRegion.Singapore);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_za:", false), VoiceRegion.SouthAfrica);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_au:", false), VoiceRegion.Sydney);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_us:", false), VoiceRegion.US);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":arrow_up:", false), VoiceRegion.USCentral);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":arrow_right:", false), VoiceRegion.USEast);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":arrow_down:", false), VoiceRegion.USSouth);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":arrow_left:", false), VoiceRegion.USWest);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":green_square:", false), VoiceRegion.USWest);
+		}
+
+        public override async Task SetupWizard()
         {
             if (authorities == ChannelAuthorities.CompletelyUnauthorized || !authorities.HasFlag(ChannelAuthorities.CanCreateChannels))
             {
@@ -99,6 +97,20 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
             return await Task.FromResult(result);
         }
 
+        protected override IEnumerable<Func<Task>> CreateWizardSteps()
+        {
+            List<Func<Task>> taskSteps = new List<Func<Task>>();
+            if (authorities.HasFlag(ChannelAuthorities.CanRenameChannels)) taskSteps.Add(AwaitRenameInteraction);
+            if (authorities.HasFlag(ChannelAuthorities.CanCreatePrivateChannels)
+                || authorities.HasFlag(ChannelAuthorities.CanCreateSupporterChannels)
+                || authorities.HasFlag(ChannelAuthorities.CanCreateHiddenChannels))
+                taskSteps.Add(AwaitAccesibilityInteraction);
+            if (authorities.HasFlag(ChannelAuthorities.CanCreateLimitedChannels)) taskSteps.Add(AwaitLimitedInteraction);
+            if (authorities.HasFlag(ChannelAuthorities.CanModifyChannelBitrate)) taskSteps.Add(AwaitBitrateInteraction);
+            if (authorities.HasFlag(ChannelAuthorities.CanModifyChannelRegion)) taskSteps.Add(AwaitRegionInteraction);
+            return taskSteps;
+        }
+
         protected override async Task PreStep()
         {
             await interactionMessage?.DeleteAllReactionsAsync("Creation wizard step advancement - Clear previous emojis - PreTask()");
@@ -115,60 +127,12 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
         }
         #endregion
 
-        #region Private Setup Methods
-        private IEnumerable<Func<Task>> CreateWizardSteps()
-        {
-            List<Func<Task>> taskSteps = new List<Func<Task>>();
-            if (authorities.HasFlag(ChannelAuthorities.CanRenameChannels)) taskSteps.Add(AwaitRenameInteraction);
-            if (authorities.HasFlag(ChannelAuthorities.CanCreatePrivateChannels)
-                || authorities.HasFlag(ChannelAuthorities.CanCreateSupporterChannels)
-                || authorities.HasFlag(ChannelAuthorities.CanCreateHiddenChannels))
-                taskSteps.Add(AwaitAccesibilityInteraction);
-            if (authorities.HasFlag(ChannelAuthorities.CanCreateLimitedChannels)) taskSteps.Add(AwaitLimitedInteraction);
-            if (authorities.HasFlag(ChannelAuthorities.CanModifyChannelBitrate)) taskSteps.Add(AwaitBitrateInteraction);
-            if (authorities.HasFlag(ChannelAuthorities.CanModifyChannelRegion)) taskSteps.Add(AwaitRegionInteraction);
-            return taskSteps;
-        }
-
-        private void PopulateEmoji()
-        {
-            yes = DiscordEmoji.FromName(context.Client, ":white_check_mark:", false);
-            no = DiscordEmoji.FromName(context.Client, ":negative_squared_cross_mark:", false);
-            cancel = DiscordEmoji.FromName(context.Client, ":no_entry_sign:", false);
-
-            @public = DiscordEmoji.FromName(context.Client, ":unlock:", false);
-            @private = DiscordEmoji.FromName(context.Client, ":closed_lock_with_key:", false);
-            hidden = DiscordEmoji.FromName(context.Client, ":lock_with_ink_pen:", false);
-            supporter = DiscordEmoji.FromName(context.Client, ":gem:", false);
-
-            brazil = DiscordEmoji.FromName(context.Client, ":flag_br:", false);
-            europe = DiscordEmoji.FromName(context.Client, ":flag_eu:", false);
-            hongkong = DiscordEmoji.FromName(context.Client, ":flag_hk:", false);
-            india = DiscordEmoji.FromName(context.Client, ":flag_in:", false);
-            japan = DiscordEmoji.FromName(context.Client, ":flag_jp:", false);
-            russia = DiscordEmoji.FromName(context.Client, ":flag_ru:", false);
-            singapore = DiscordEmoji.FromName(context.Client, ":flag_sg:", false);
-            southafrica = DiscordEmoji.FromName(context.Client, ":flag_za:", false);
-            sydney = DiscordEmoji.FromName(context.Client, ":flag_au:", false);
-            usa = DiscordEmoji.FromName(context.Client, ":flag_us:", false);
-            uscentral = DiscordEmoji.FromName(context.Client, ":arrow_up:", false);
-            useast = DiscordEmoji.FromName(context.Client, ":arrow_right:", false);
-            ussouth = DiscordEmoji.FromName(context.Client, ":arrow_down:", false);
-            uswest = DiscordEmoji.FromName(context.Client, ":arrow_left:", false);
-            auto = DiscordEmoji.FromName(context.Client, ":green_square:", false);
-
-            regionList = new[] { brazil, europe, hongkong, india, japan, russia, singapore, southafrica, sydney, usa, auto };
-
-            emojiPopulated = true;
-        }
-        #endregion
-
         #region Private Helper Methods
         private bool CheckResultCancelled(InteractivityResult<MessageReactionAddEventArgs> result)
         {
             bool cancelled;
 
-            if (cancelled = result.Result.Emoji.Equals(cancel))
+            if (cancelled = result.Result.Emoji.Equals(reactionEmotes.Cancel))
             {
                 this.result.Valid = false;
                 this.result.InvalidationReason = WizardInvalidationReason.Cancelled;
@@ -192,88 +156,28 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
 
         private VoiceRegion GetVoiceRegionFromEmoji(DiscordEmoji emoji)
         {
-            VoiceRegion region = VoiceRegion.Unknown;
-
-            switch (emoji.Name)
-            {
-                case ":flag_br:":
-                    region = VoiceRegion.Brazil;
-                    break;
-                case ":flag_eu:":
-                    region = VoiceRegion.Europe;
-                    break;
-                case ":flag_hk:":
-                    region = VoiceRegion.HongKong;
-                    break;
-                case ":flag_in:":
-                    region = VoiceRegion.India;
-                    break;
-                case ":flag_jp:":
-                    region = VoiceRegion.Japan;
-                    break;
-                case ":flag_ru:":
-                    region = VoiceRegion.Russia;
-                    break;
-                case ":flag_sg:":
-                    region = VoiceRegion.Singapore;
-                    break;
-                case ":flag_za:":
-                    region = VoiceRegion.SouthAfrica;
-                    break;
-                case ":flag_au:":
-                    region = VoiceRegion.Sydney;
-                    break;
-                case ":arrow_up:":
-                    region = VoiceRegion.USCentral;
-                    break;
-                case ":arrow_right:":
-                    region = VoiceRegion.USEast;
-                    break;
-                case ":arrow_down:":
-                    region = VoiceRegion.USSouth;
-                    break;
-                case ":arrow_left:":
-                    region = VoiceRegion.USWest;
-                    break;
-                case ":green_square:":
-                    region = VoiceRegion.Automatic;
-                    break;
-                default:
-                    result.Valid = false;
-                    result.InvalidationReason = WizardInvalidationReason.InvalidInput;
-                    result.ErrorString = "The provided emoji was not a valid voice region emoji";
-                    break;
-            }
+            if (!reactionEmotes.GetEmojiValue(emoji, out VoiceRegion region))
+			{
+                region = VoiceRegion.Unknown;
+                result.Valid = false;
+				result.InvalidationReason = WizardInvalidationReason.InvalidInput;
+				result.ErrorString = "The provided emoji was not a valid voice region emoji";
+			}
 
             return region;
         }
 
         private ChannelAccessibility GetChannelAccessabilityFromEmoji(DiscordEmoji emoji)
         {
-            ChannelAccessibility publicity = ChannelAccessibility.Unknown;
-
-            switch (emoji.Name)
-            {
-                case ":unlock:":
-                    publicity = ChannelAccessibility.Public;
-                    break;
-                case ":closed_lock_with_key:":
-                    publicity = ChannelAccessibility.Private;
-                    break;
-                case ":lock_with_ink_pen:":
-                    publicity = ChannelAccessibility.Hidden;
-                    break;
-                case ":gem:":
-                    publicity = ChannelAccessibility.Supporter;
-                    break;
-                default:
-                    result.Valid = false;
-                    result.InvalidationReason = WizardInvalidationReason.InvalidInput;
-                    result.ErrorString = "The provided emoji was not a valid accessability emoji";
-                    break;
+            if (!reactionEmotes.GetEmojiValue(emoji, out ChannelAccessibility accessibility))
+			{
+                accessibility = ChannelAccessibility.Unknown;
+                result.Valid = false;
+                result.InvalidationReason = WizardInvalidationReason.InvalidInput;
+                result.ErrorString = "The provided emoji was not a valid accessability emoji";
             }
 
-            return publicity;
+            return accessibility;
         }
 
         private async Task WizardCancelledResponse()
@@ -297,14 +201,14 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
         {
             await interactionMessage.ModifyAsync(GetBuilder("Channel creation wizard - Channel Rename", $"{context.Member.Mention}: Do you want to reaname the channel?", DiscordColor.Blue, "Wizard rename step").Build());
 
-            await interactionMessage.CreateReactionAsync(yes);
-            await interactionMessage.CreateReactionAsync(no);
-            await interactionMessage.CreateReactionAsync(cancel);
+            await interactionMessage.CreateReactionAsync(reactionEmotes.Yes);
+            await interactionMessage.CreateReactionAsync(reactionEmotes.No);
+            await interactionMessage.CreateReactionAsync(reactionEmotes.Cancel);
 
             var result = await interactionMessage.WaitForReactionAsync(context.Member);
             if (CheckResultTimedOut(result) || CheckResultCancelled(result)) return;
 
-            if (result.Result.Emoji.Equals(no)) return;
+            if (result.Result.Emoji.Equals(reactionEmotes.No)) return;
 
             await AwaitRenameResponse();
         }
@@ -344,11 +248,11 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
 
             await interactionMessage.ModifyAsync(GetBuilder("Channel creation wizard - Channel accesibility", $"{context.Member.Mention}: Who would you like to allow access to the channel by default?", DiscordColor.Blue, "Wizard accesibility step").Build());
 
-            if (authorities.HasFlag(ChannelAuthorities.CanCreatePublicChannels)) await interactionMessage.CreateReactionAsync(@public);
-            if (authorities.HasFlag(ChannelAuthorities.CanCreatePrivateChannels)) await interactionMessage.CreateReactionAsync(@private);
-            if (authorities.HasFlag(ChannelAuthorities.CanCreateHiddenChannels)) await interactionMessage.CreateReactionAsync(hidden);
-            if (authorities.HasFlag(ChannelAuthorities.CanCreateSupporterChannels)) await interactionMessage.CreateReactionAsync(supporter);
-            await interactionMessage.CreateReactionAsync(cancel);
+            if (authorities.HasFlag(ChannelAuthorities.CanCreatePublicChannels)) await interactionMessage.CreateReactionAsync(reactionEmotes[channelPublicity[0]]);
+            if (authorities.HasFlag(ChannelAuthorities.CanCreatePrivateChannels)) await interactionMessage.CreateReactionAsync(reactionEmotes[channelPublicity[1]]);
+            if (authorities.HasFlag(ChannelAuthorities.CanCreateHiddenChannels)) await interactionMessage.CreateReactionAsync(reactionEmotes[channelPublicity[2]]);
+            if (authorities.HasFlag(ChannelAuthorities.CanCreateSupporterChannels)) await interactionMessage.CreateReactionAsync(reactionEmotes[channelPublicity[3]]);
+            await interactionMessage.CreateReactionAsync(reactionEmotes.Cancel);
 
             var result = await interactionMessage.WaitForReactionAsync(context.Member);
             if (CheckResultTimedOut(result) || CheckResultCancelled(result)) return;
@@ -360,14 +264,14 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
         {
             await interactionMessage.ModifyAsync(GetBuilder("Channel creation wizard - Specify user limit on channel", $"{context.Member.Mention}: Do you want the channel to be limited to a certain number of connected users, or free for allowed members to join?", DiscordColor.Blue, "Wizard limited user step").Build());
 
-            await interactionMessage.CreateReactionAsync(yes);
-            await interactionMessage.CreateReactionAsync(no);
-            await interactionMessage.CreateReactionAsync(cancel);
+            await interactionMessage.CreateReactionAsync(reactionEmotes.Yes);
+            await interactionMessage.CreateReactionAsync(reactionEmotes.No);
+            await interactionMessage.CreateReactionAsync(reactionEmotes.Cancel);
 
             var result = await interactionMessage.WaitForReactionAsync(context.Member);
             if (CheckResultTimedOut(result) || CheckResultCancelled(result)) return;
 
-            if (result.Result.Emoji.Equals(no)) return;
+            if (result.Result.Emoji.Equals(reactionEmotes.No)) return;
 
             await AwaitLimitedNumberResponse();
         }
@@ -397,7 +301,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
             var result = await interactionMessage.WaitForReactionAsync(context.Member);
             if (CheckResultTimedOut(result) || CheckResultCancelled(result)) return;
 
-            if (result.Result.Emoji.Equals(no))
+            if (result.Result.Emoji.Equals(reactionEmotes.No))
             {
                 this.result.Bitrate = 64000;
                 return;
@@ -433,16 +337,16 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
         {
             await interactionMessage.ModifyAsync(GetBuilder("Channel creation wizard - Select channel region", $"{context.Member.Mention}: Please react to this message with the desired region the voice channel should use. React with :green_square: to automatically select the region", DiscordColor.Blue, "Wizard region select step").Build());
 
-            foreach (var emoji in regionList)
+            foreach (var name in regionList)
             {
-                await interactionMessage.CreateReactionAsync(emoji);
+                await interactionMessage.CreateReactionAsync(reactionEmotes[name]);
             }
-            await interactionMessage.CreateReactionAsync(cancel);
+            await interactionMessage.CreateReactionAsync(reactionEmotes.Cancel);
 
             var result = await interactionMessage.WaitForReactionAsync(context.Member);
             if (CheckResultTimedOut(result) || CheckResultCancelled(result)) return;
 
-            if (result.Result.Emoji.Equals(usa))
+            if (result.Result.Emoji.Equals(reactionEmotes[regionList[^1]]))
             {
                 await AwaitUSSubregionInteraction();
                 return;
@@ -458,17 +362,19 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
                 $"{context.Member.Mention}: Please react to this message with the desired region the voice channel should use. React with :green_square: to allow Discord to automatically select the region. React with :region_us: to show the US subregion wizard step.",
                 DiscordColor.Blue,
                 "Wizard region select step")
-                .AddField("US Central", $"Use {uscentral} to select the US Central region")
-                .AddField("US East", $"Use {useast} to select the US Central region")
-                .AddField("US South", $"Use {ussouth} to select the US Central region")
-                .AddField("US West", $"Use {uswest} to select the US Central region")
+                .AddField("US Central", $"Use {reactionEmotes[usaSubregionList[0]]} to select the US Central region")
+                .AddField("US East", $"Use {reactionEmotes[usaSubregionList[1]]} to select the US Central region")
+                .AddField("US South", $"Use {reactionEmotes[usaSubregionList[2]]} to select the US Central region")
+                .AddField("US West", $"Use {reactionEmotes[usaSubregionList[3]]} to select the US Central region")
                 .Build());
-            await interactionMessage.CreateReactionAsync(uscentral);
-            await interactionMessage.CreateReactionAsync(useast);
-            await interactionMessage.CreateReactionAsync(ussouth);
-            await interactionMessage.CreateReactionAsync(uswest);
-            await interactionMessage.CreateReactionAsync(auto);
-            await interactionMessage.CreateReactionAsync(cancel);
+
+			foreach (var name in usaSubregionList)
+			{
+                await interactionMessage.CreateReactionAsync(reactionEmotes[name]);
+			}
+
+            await interactionMessage.CreateReactionAsync(reactionEmotes[regionList[^2]]);
+            await interactionMessage.CreateReactionAsync(reactionEmotes.Cancel);
 
             var result = await interactionMessage.WaitForReactionAsync(context.Member);
             if (CheckResultTimedOut(result) || CheckResultCancelled(result)) return;

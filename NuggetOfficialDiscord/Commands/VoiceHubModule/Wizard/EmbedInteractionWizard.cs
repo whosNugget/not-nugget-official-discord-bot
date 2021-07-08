@@ -10,9 +10,10 @@ namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard
 {
 	public abstract class EmbedInteractionWizard<T> where T : struct, IWizardResult
 	{
-		protected readonly CommandContext context;
+		protected static WizardEmoteContainer reactionEmotes;
+		protected static bool emojiPopulated = false;
 
-		protected WizardEmoteContainer reactionEmotes;
+		protected readonly CommandContext context;
 
 		protected readonly List<Func<Task>> wizardSteps;
 
@@ -22,8 +23,9 @@ namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard
 
 		public EmbedInteractionWizard(CommandContext context)
 		{
+			reactionEmotes ??= new WizardEmoteContainer(context.Client);
+
 			this.context = context;
-			reactionEmotes = new WizardEmoteContainer(context.Client);
 			responseChannel = context.Channel;
 			wizardSteps = new List<Func<Task>>();
 			result = new T();
@@ -38,8 +40,12 @@ namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard
 			this.responseChannel = responseChannel;
 		}
 
+		public abstract void InitializeEmojiContainer();
+
 		public virtual async Task SetupWizard() => await Task.CompletedTask;
 		public virtual async Task<T> GetResult() => await Task.FromResult(result);
+		
+		protected abstract IEnumerable<Func<Task>> CreateWizardSteps();
 
 		protected virtual Task PreStep() => Task.CompletedTask;
 		protected virtual Task PostStep() => Task.CompletedTask;

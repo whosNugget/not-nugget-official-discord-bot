@@ -3,6 +3,7 @@ using DSharpPlus.Entities;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard.Extensions.AlterPermissions
 {
@@ -20,6 +21,16 @@ namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard.Extensions.AlterP
 		{
 			this.roles = roles;
 			this.members = members;
+		}
+
+		public override void InitializeEmojiContainer()
+		{
+			throw new NotImplementedException();
+		}
+
+		protected override IEnumerable<Func<Task>> CreateWizardSteps()
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

@@ -13,6 +13,7 @@
 		Singapore,
 		SouthAfrica,
 		Sydney,
+		US,
 		USCentral,
 		USEast,
 		USSouth,
