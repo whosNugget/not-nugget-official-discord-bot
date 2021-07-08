@@ -12,6 +12,8 @@ namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard
 	{
 		protected readonly CommandContext context;
 
+		protected WizardEmoteContainer reactionEmotes;
+
 		protected readonly List<Func<Task>> wizardSteps;
 
 		protected DiscordChannel responseChannel;
@@ -21,6 +23,7 @@ namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard
 		public EmbedInteractionWizard(CommandContext context)
 		{
 			this.context = context;
+			reactionEmotes = new WizardEmoteContainer(context.Client);
 			responseChannel = context.Channel;
 			wizardSteps = new List<Func<Task>>();
 			result = new T();
