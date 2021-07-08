@@ -18,5 +18,5 @@
         /// but also takes the focus away from the server
         /// </summary>
         public bool CreateAndUseDMChannelsForWizards { get; set; }
-    }
+	}
 }

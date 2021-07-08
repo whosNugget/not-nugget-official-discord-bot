@@ -40,32 +40,6 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
 		#endregion
 
 		#region Overrides
-		public override void InitializeEmojiContainer()
-		{
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":white_check_mark:", false), true);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":negative_squared_cross_mark:", false), false);
-            reactionEmotes.SetEmojiValue<object>(DiscordEmoji.FromName(context.Client, ":no_entry_sign:", false), null);
-
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":unlock:", false), ChannelAccessibility.Public);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":closed_lock_with_key:", false), ChannelAccessibility.Private);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":lock_with_ink_pen:", false), ChannelAccessibility.Hidden);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":gem:", false), ChannelAccessibility.Supporter);
-            
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_br:", false), VoiceRegion.Brazil);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_eu:", false), VoiceRegion.Europe);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_hk:", false), VoiceRegion.HongKong);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_in:", false), VoiceRegion.India);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_ru:", false), VoiceRegion.Russia);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_sg:", false), VoiceRegion.Singapore);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_za:", false), VoiceRegion.SouthAfrica);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_au:", false), VoiceRegion.Sydney);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_us:", false), VoiceRegion.US);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":arrow_up:", false), VoiceRegion.USCentral);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":arrow_right:", false), VoiceRegion.USEast);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":arrow_down:", false), VoiceRegion.USSouth);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":arrow_left:", false), VoiceRegion.USWest);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":green_square:", false), VoiceRegion.USWest);
-		}
 
         public override async Task SetupWizard()
         {
@@ -97,6 +71,29 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
             return await Task.FromResult(result);
         }
 
+		protected override void InitializeEmojiContainer()
+		{
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":unlock:", false), ChannelAccessibility.Public);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":closed_lock_with_key:", false), ChannelAccessibility.Private);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":lock_with_ink_pen:", false), ChannelAccessibility.Hidden);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":gem:", false), ChannelAccessibility.Supporter);
+            
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_br:", false), VoiceRegion.Brazil);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_eu:", false), VoiceRegion.Europe);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_hk:", false), VoiceRegion.HongKong);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_in:", false), VoiceRegion.India);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_ru:", false), VoiceRegion.Russia);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_sg:", false), VoiceRegion.Singapore);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_za:", false), VoiceRegion.SouthAfrica);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_au:", false), VoiceRegion.Sydney);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_us:", false), VoiceRegion.US);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":arrow_up:", false), VoiceRegion.USCentral);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":arrow_right:", false), VoiceRegion.USEast);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":arrow_down:", false), VoiceRegion.USSouth);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":arrow_left:", false), VoiceRegion.USWest);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":green_square:", false), VoiceRegion.USWest);
+		}
+        
         protected override IEnumerable<Func<Task>> CreateWizardSteps()
         {
             List<Func<Task>> taskSteps = new List<Func<Task>>();

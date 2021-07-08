@@ -18,7 +18,7 @@ namespace NuggetOfficial.Discord
 {
     public class NuggetBot : DiscordBot
 	{
-		readonly VoiceRegisteredGuildData guildDataReference = null;
+		readonly RegisteredGuildData guildDataReference = null;
 
 		/// <summary>
 		/// Create a new bot instance without attempting to deserialize existing information
@@ -30,7 +30,7 @@ namespace NuggetOfficial.Discord
 		/// <param name="deserializePath">Path to attempt deserializing of existing information</param>
 		public NuggetBot(string deserializePath)
 		{
-			guildDataReference = Serializer.Deserialize<VoiceRegisteredGuildData>(deserializePath);
+			guildDataReference = Serializer.Deserialize<RegisteredGuildData>(deserializePath);
 		}
 
 		/// <summary>
@@ -83,6 +83,7 @@ namespace NuggetOfficial.Discord
 			await Task.Delay(-1);
 		}
 
+		//TODO this should be handled elsewhere
 		async Task OnGuildDownloadComplete(DiscordClient sender, GuildDownloadCompletedEventArgs e)
 		{
 			await AttemptRebuildVoiceRegisteredGuildDataAsync(sender);
