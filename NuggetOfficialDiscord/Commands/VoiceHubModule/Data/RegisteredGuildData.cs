@@ -20,7 +20,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 	/// This class holds references to DiscordGuilds and their subsequent data used by the bot's VC features. [NYI/NYT] This class can be directly serialized and deserialized
 	/// </summary>
 	[JsonDictionary]
-	public class VoiceRegisteredGuildData : ISerializable<VoiceRegisteredGuildData>, IDeserializable<VoiceRegisteredGuildData>
+	public class RegisteredGuildData : ISerializable<RegisteredGuildData>, IDeserializable<RegisteredGuildData>
 	{
 		[JsonIgnore]
 		public Dictionary<DiscordGuild, GuildData> RegisteredGuilds { get; private set; } = new Dictionary<DiscordGuild, GuildData>();
@@ -211,7 +211,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 			return new SerializationResult(success, errorMessage);
 		}
 
-		public DeserializationResult<VoiceRegisteredGuildData> Deserialize(TextReader reader, JsonSerializer serializer)
+		public DeserializationResult<RegisteredGuildData> Deserialize(TextReader reader, JsonSerializer serializer)
 		{
 			bool success = false;
 			string errorMesage = string.Empty;
@@ -226,7 +226,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 				errorMesage = e.Message;
 			}
 
-			return new DeserializationResult<VoiceRegisteredGuildData>(success, errorMesage, this);
+			return new DeserializationResult<RegisteredGuildData>(success, errorMesage, this);
 		}
 	}
 

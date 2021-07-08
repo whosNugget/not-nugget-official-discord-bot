@@ -15,17 +15,9 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
 {
 	public class VoiceHubModule : BaseCommandModule
 	{
-		enum MessageType //TODO create a minimalistic message response system seperate from this class
-		{
-			Error,
-			Warning,
-			Success,
-			Notification,
-		}
+		readonly RegisteredGuildData registeredGuildData;
 
-		readonly VoiceRegisteredGuildData registeredGuildData;
-
-		public VoiceHubModule(VoiceRegisteredGuildData registeredGuildData)
+		public VoiceHubModule(RegisteredGuildData registeredGuildData)
 		{
 			this.registeredGuildData = registeredGuildData;
 		}
@@ -50,6 +42,12 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
 		//	await ctx.RespondAsync(CreateEmbedMessage(ctx, messageType, "Serialization Output", new List<KeyValuePair<string, string>>(new[] { new KeyValuePair<string, string>("JSON result", $"{(result.Success ? "Success" : "Error: ")}{result.ErrorMessage}") })));
 		//}
 
+		[Command("registerguild")]
+		public async Task RegisterGuild(CommandContext ctx, DiscordChannel logChannel, DiscordChannel parentCategory, DiscordChannel waitingRoomVC, DiscordChannel commandListenChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole)
+		{
+			//store the log channel
+			await RegisterGuild(ctx, parentCategory, waitingRoomVC, commandListenChannel, memberRole, mutedRole, botManagerRole);
+		}
 		[Command("registerguild")]
 		public async Task RegisterGuild(CommandContext ctx, DiscordChannel parentCategory, DiscordChannel waitingRoomVC, DiscordChannel commandListenChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole)
 		{
@@ -109,6 +107,12 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
 			//    }
 			//}
 		}
+
+		private bool SerializeModifiedGuildData()
+		{
+			return false;
+		}
+
 		[Command("checkperms")] //This command will outline a member's permissions neatly in an embed
 		public async Task CheckMemberPermissions(CommandContext ctx)
 		{

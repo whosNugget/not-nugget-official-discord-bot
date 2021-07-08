@@ -73,10 +73,6 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
 
 		protected override void InitializeEmojiContainer()
 		{
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":white_check_mark:", false), true);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":negative_squared_cross_mark:", false), false);
-            reactionEmotes.SetEmojiValue<object>(DiscordEmoji.FromName(context.Client, ":no_entry_sign:", false), null);
-
             reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":unlock:", false), ChannelAccessibility.Public);
             reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":closed_lock_with_key:", false), ChannelAccessibility.Private);
             reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":lock_with_ink_pen:", false), ChannelAccessibility.Hidden);
