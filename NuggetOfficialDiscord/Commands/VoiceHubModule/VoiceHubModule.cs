@@ -262,21 +262,22 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
 			return createdChannel;
 		}
 
+
 		//TODO needs thorough testing
-		async Task AttemptInformPermittedMembersDirectly(DiscordMember channelCreator, DiscordChannel createdVoiceChannel, IEnumerable<DiscordMember> permittedAndAuthorizedMembers)
-		{
-			DiscordInvite newInvite = await createdVoiceChannel.CreateInviteAsync();
-			foreach (DiscordMember member in permittedAndAuthorizedMembers)
-			{
-				DiscordDmChannel currentMemberDm;
-				try { currentMemberDm = await member.CreateDmChannelAsync(); }
-				catch (Exception) { continue; }
+		//async Task AttemptInformPermittedMembersDirectly(DiscordMember channelCreator, DiscordChannel createdVoiceChannel, IEnumerable<DiscordMember> permittedAndAuthorizedMembers)
+		//{
+		//	DiscordInvite newInvite = await createdVoiceChannel.CreateInviteAsync();
+		//	foreach (DiscordMember member in permittedAndAuthorizedMembers)
+		//	{
+		//		DiscordDmChannel currentMemberDm;
+		//		try { currentMemberDm = await member.CreateDmChannelAsync(); }
+		//		catch (Exception) { continue; }
 
-				if (currentMemberDm is null) continue;
+		//		if (currentMemberDm is null) continue;
 
-				await currentMemberDm.SendMessageAsync($"You were whitelisted to join a VC by {channelCreator.Nickname ?? channelCreator.DisplayName} in {createdVoiceChannel.Guild.Name}. Click this link to immediately join the channel: {newInvite}");
-			}
-		}
+		//		await currentMemberDm.SendMessageAsync($"You were whitelisted to join a VC by {channelCreator.Nickname ?? channelCreator.DisplayName} in {createdVoiceChannel.Guild.Name}. Click this link to immediately join the channel: {newInvite}");
+		//	}
+		//}
 		#endregion
 
 		#region Synchronous Private Methods
