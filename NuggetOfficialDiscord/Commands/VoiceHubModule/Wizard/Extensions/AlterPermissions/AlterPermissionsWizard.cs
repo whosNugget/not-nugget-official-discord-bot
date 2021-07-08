@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard.Extensions.AlterPermissions
+namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard
 {
 	public class AlterPermissionsWizard : EmbedInteractionWizard<AlterPermissionsWizardResult>
 	{

@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.29324.140
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Program", "..\Program\Program.csproj", "{82BD723A-00B2-4150-93E4-282CFDD51909}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuggetOfficialDiscord", "NuggetOfficialDiscord.csproj", "{44565EC3-B1BC-455D-A633-6E9D5A46F904}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuggetOfficialDiscord", "NuggetOfficialDiscord.csproj", "{53330339-CF81-4514-9AE7-1769FECB63D4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{82BD723A-00B2-4150-93E4-282CFDD51909}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{82BD723A-00B2-4150-93E4-282CFDD51909}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{82BD723A-00B2-4150-93E4-282CFDD51909}.Release|Any CPU.Build.0 = Release|Any CPU
-		{44565EC3-B1BC-455D-A633-6E9D5A46F904}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{44565EC3-B1BC-455D-A633-6E9D5A46F904}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{44565EC3-B1BC-455D-A633-6E9D5A46F904}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{44565EC3-B1BC-455D-A633-6E9D5A46F904}.Release|Any CPU.Build.0 = Release|Any CPU
+		{53330339-CF81-4514-9AE7-1769FECB63D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53330339-CF81-4514-9AE7-1769FECB63D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53330339-CF81-4514-9AE7-1769FECB63D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53330339-CF81-4514-9AE7-1769FECB63D4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,4 +1,5 @@
-﻿using System.Configuration;
+﻿using NuggetOfficial.Discord;
+using System.Configuration;
 using System.Threading.Tasks;
 
 namespace NuggetOfficial
