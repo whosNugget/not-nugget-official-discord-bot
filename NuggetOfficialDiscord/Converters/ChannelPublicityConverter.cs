@@ -8,35 +8,35 @@ namespace NuggetOfficial.Discord.Data.Converters
 {
 	public class ChannelPublicityConverter : IArgumentConverter<ChannelAccessibility>
 	{
-		public Task<Optional<ChannelAccessibility>> ConvertAsync(string value, CommandContext ctx)
+		public async Task<Optional<ChannelAccessibility>> ConvertAsync(string value, CommandContext ctx)
 		{
-			Optional<ChannelAccessibility> output;
+			ChannelAccessibility output;
 
 			switch (value.ToLowerInvariant())
 			{
 				case "":
 				case "public":
-					output = Optional.FromValue(ChannelAccessibility.Public);
+					output = ChannelAccessibility.Public;
 					break;
 
 				case "private":
-					output = Optional.FromValue(ChannelAccessibility.Private);
+					output = ChannelAccessibility.Private;
 					break;
 
 				case "supporter":
-					output = Optional.FromValue(ChannelAccessibility.Supporter);
+					output = ChannelAccessibility.Supporter;
 					break;
 
 				case "hidden":
-					output = Optional.FromValue(ChannelAccessibility.Hidden);
+					output = ChannelAccessibility.Hidden;
 					break;
 
 				default:
-					output = Optional.FromValue(ChannelAccessibility.Unknown);
+					output = ChannelAccessibility.Unknown;
 					break;
 			}
 
-			return Task.FromResult(output);
+			return await Task.FromResult(output);
 		}
 	}
 }

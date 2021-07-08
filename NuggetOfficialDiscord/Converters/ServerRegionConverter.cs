@@ -8,76 +8,76 @@ namespace NuggetOfficial.Discord.Data.Converters
 {
 	public class ServerRegionConverter : IArgumentConverter<VoiceRegion>
 	{
-		public Task<Optional<VoiceRegion>> ConvertAsync(string value, CommandContext ctx)
+		public async Task<Optional<VoiceRegion>> ConvertAsync(string value, CommandContext ctx)
 		{
-			Optional<VoiceRegion> output;
+			VoiceRegion output;
 
 			switch (value.ToLowerInvariant())
 			{
 				case "":
 				case "auto":
 				case "automatic":
-					output = Optional.FromValue(VoiceRegion.Automatic);
+					output = VoiceRegion.Automatic;
 					break;
 
 				case "brazil":
-					output = Optional.FromValue(VoiceRegion.Brazil);
+					output = VoiceRegion.Brazil;
 					break;
 
 				case "europe":
-					output = Optional.FromValue(VoiceRegion.Europe);
+					output = VoiceRegion.Europe;
 					break;
 
 				case "hongkong":
-					output = Optional.FromValue(VoiceRegion.HongKong);
+					output = VoiceRegion.HongKong;
 					break;
 
 				case "india":
-					output = Optional.FromValue(VoiceRegion.India);
+					output = VoiceRegion.India;
 					break;
 
 				case "japan":
-					output = Optional.FromValue(VoiceRegion.Japan);
+					output = VoiceRegion.Japan;
 					break;
 
 				case "russia":
-					output = Optional.FromValue(VoiceRegion.Russia);
+					output = VoiceRegion.Russia;
 					break;
 
 				case "singapore":
-					output = Optional.FromValue(VoiceRegion.Singapore);
+					output = VoiceRegion.Singapore;
 					break;
 
 				case "southafrica":
-					output = Optional.FromValue(VoiceRegion.SouthAfrica);
+					output = VoiceRegion.SouthAfrica;
 					break;
 
 				case "sydney":
-					output = Optional.FromValue(VoiceRegion.Sydney);
+					output = VoiceRegion.Sydney;
 					break;
 
 				case "uscentral":
-					output = Optional.FromValue(VoiceRegion.USCentral);
+					output = VoiceRegion.USCentral;
 					break;
 
 				case "useast":
-					output = Optional.FromValue(VoiceRegion.USEast);
+					output = VoiceRegion.USEast;
 					break;
 
 				case "ussouth":
-					output = Optional.FromValue(VoiceRegion.USSouth);
+					output = VoiceRegion.USSouth;
 					break;
 
 				case "uswest":
-					output = Optional.FromValue(VoiceRegion.USWest);
+					output = VoiceRegion.USWest;
 					break;
 
 				default:
-					output = Optional.FromValue(VoiceRegion.Unknown);
+					output = VoiceRegion.Unknown;
 					break;
 			}
 
-			return Task.FromResult(output);
+			return await Task.FromResult(output);
 		}
 	}
 }
