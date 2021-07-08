@@ -40,11 +40,10 @@ namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard
 			this.responseChannel = responseChannel;
 		}
 
-		public abstract void InitializeEmojiContainer();
-
 		public virtual async Task SetupWizard() => await Task.CompletedTask;
 		public virtual async Task<T> GetResult() => await Task.FromResult(result);
 		
+		protected abstract void InitializeEmojiContainer();
 		protected abstract IEnumerable<Func<Task>> CreateWizardSteps();
 
 		protected virtual Task PreStep() => Task.CompletedTask;

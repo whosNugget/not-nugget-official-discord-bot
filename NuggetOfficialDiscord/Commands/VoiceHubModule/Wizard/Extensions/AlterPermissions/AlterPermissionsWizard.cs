@@ -23,7 +23,7 @@ namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard.Extensions.AlterP
 			this.members = members;
 		}
 
-		public override void InitializeEmojiContainer()
+		protected override void InitializeEmojiContainer()
 		{
 			throw new NotImplementedException();
 		}

@@ -83,6 +83,7 @@ namespace NuggetOfficial.Discord
 			await Task.Delay(-1);
 		}
 
+		//TODO this should be handled elsewhere
 		async Task OnGuildDownloadComplete(DiscordClient sender, GuildDownloadCompletedEventArgs e)
 		{
 			await AttemptRebuildVoiceRegisteredGuildDataAsync(sender);
