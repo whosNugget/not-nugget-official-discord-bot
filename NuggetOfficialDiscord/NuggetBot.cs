@@ -47,7 +47,7 @@ namespace NuggetOfficial.Discord
         /// <returns></returns>
         public override async Task Run(string botToken)
         {
-            DiscordClient discord = new DiscordClient(new DiscordConfiguration()
+            DiscordClient discord = new(new DiscordConfiguration()
             {
                 Token = botToken,
                 TokenType = TokenType.Bot,
@@ -90,23 +90,18 @@ namespace NuggetOfficial.Discord
             await Task.Delay(-1);
         }
 
-        //TODO this should be handled elsewhere
+        //TODO this should be handled elsewhere (i think)
         async Task OnGuildDownloadComplete(DiscordClient sender, GuildDownloadCompletedEventArgs e)
         {
-            await AttemptRebuildVoiceRegisteredGuildDataAsync(sender);
-        }
-
-        async Task AttemptRebuildVoiceRegisteredGuildDataAsync(DiscordClient client)
-        {
             string error;
-            if ((error = await guildDataReference.RebuildDeserializedDataFromClient(client)) == string.Empty)
+            if ((error = await guildDataReference.RebuildDeserializedDataFromClient(sender)) == string.Empty)
             {
-                client.Logger.Log(LogLevel.Information, "Data deserialized from disk");
+                sender.Logger.Log(LogLevel.Information, "Data deserialized from disk");
                 return;
             }
 
             //log the error
-            client.Logger.Log(LogLevel.Error, error);
+            sender.Logger.Log(LogLevel.Warning, error);
         }
     }
 }
