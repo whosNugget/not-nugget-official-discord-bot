@@ -17,89 +17,91 @@ using System.Threading.Tasks;
 namespace NuggetOfficial.Discord
 {
     public class NuggetBot : DiscordBot
-	{
-		readonly RegisteredGuildData guildDataReference = null;
+    {
+        readonly RegisteredGuildData guildDataReference = null;
 
-		/// <summary>
-		/// Create a new bot instance without attempting to deserialize existing information
-		/// </summary>
-		public NuggetBot() { }
-		/// <summary>
-		/// Create a new bot instance, giving it a location to attempt deserialization of existing information from
-		/// </summary>
-		/// <param name="deserializePath">Path to attempt deserializing of existing information</param>
-		public NuggetBot(string deserializePath)
-		{
-			guildDataReference = Serializer.Deserialize<RegisteredGuildData>(deserializePath);
-		}
+        /// <summary>
+        /// Create a new bot instance without attempting to deserialize existing information
+        /// </summary>
+        public NuggetBot() { }
+        /// <summary>
+        /// Create a new bot instance, giving it a location to attempt deserialization of existing information from
+        /// </summary>
+        /// <param name="deserializePath">Path to attempt deserializing of existing information</param>
+        public NuggetBot(string deserializePath)
+        {
+            DeserializationResult<RegisteredGuildData> result;
+            if ((result = Serializer.Deserialize<RegisteredGuildData>(deserializePath, out string error)).Success)
+            {
+                guildDataReference = result.Instance;
+                return;
+            };
 
-		/// <summary>
-		/// Run the bot. Currently, this method never returns control to the calling class. This might not always be the case, but...
-		/// </summary>
-		/// <param name="botToken"></param>
-		/// <returns></returns>
-		public override async Task Run(string botToken)
-		{
-			DiscordClient discord = new DiscordClient(new DiscordConfiguration()
-			{
-				Token = botToken,
-				TokenType = TokenType.Bot,
-				Intents = DiscordIntents.All
-			});
+            //do something about the error
+        }
 
-			discord.GuildDownloadCompleted += OnGuildDownloadComplete;
+        /// <summary>
+        /// Run the bot. Currently, this method never returns control to the calling class. This might not always be the case, but...
+        /// </summary>
+        /// <param name="botToken"></param>
+        /// <returns></returns>
+        public override async Task Run(string botToken)
+        {
+            DiscordClient discord = new(new DiscordConfiguration()
+            {
+                Token = botToken,
+                TokenType = TokenType.Bot,
+                Intents = DiscordIntents.All
+            });
 
-			IServiceCollection services = new ServiceCollection().AddSingleton(guildDataReference);
+            discord.GuildDownloadCompleted += OnGuildDownloadComplete;
 
-			CommandsNextExtension commands = discord.UseCommandsNext(new CommandsNextConfiguration
-			{
-				StringPrefixes = new[] { "!" },
-				EnableMentionPrefix = false,
-				Services = services.BuildServiceProvider()
-			});
+            IServiceCollection services = new ServiceCollection().AddSingleton(guildDataReference);
 
-			discord.UseInteractivity(new InteractivityConfiguration
-			{
-				PollBehaviour = PollBehaviour.DeleteEmojis,
-				Timeout = TimeSpan.FromSeconds(30)
-			});
+            CommandsNextExtension commands = discord.UseCommandsNext(new CommandsNextConfiguration
+            {
+                StringPrefixes = new[] { "!" },
+                EnableMentionPrefix = false,
+                Services = services.BuildServiceProvider()
+            });
 
-			//discord.GuildMemberAdded += MemberValidation.TrackMemberJoinGuild;
-			//discord.GuildMemberRemoved += MemberValidation.TrackMemberLeaveGuild;
+            discord.UseInteractivity(new InteractivityConfiguration
+            {
+                PollBehaviour = PollBehaviour.DeleteEmojis,
+                Timeout = TimeSpan.FromSeconds(30)
+            });
 
-			//commands.RegisterCommands<ModerationModule>();
-			//commands.RegisterCommands<MusicModule>();
-			commands.RegisterCommands<VoiceHubModule>();
-			commands.RegisterConverter(new ServerRegionConverter());
-			commands.RegisterConverter(new ChannelPublicityConverter());
-			commands.RegisterConverter(new PermitDenyStringConverter());
+            //discord.GuildMemberAdded += MemberValidation.TrackMemberJoinGuild;
+            //discord.GuildMemberRemoved += MemberValidation.TrackMemberLeaveGuild;
 
-			await discord.ConnectAsync();
+            //commands.RegisterCommands<ModerationModule>();
+            //commands.RegisterCommands<MusicModule>();
+            commands.RegisterCommands<VoiceHubModule>();
+            commands.RegisterConverter(new ServerRegionConverter());
+            commands.RegisterConverter(new ChannelPublicityConverter());
+            commands.RegisterConverter(new PermitDenyStringConverter());
 
-			//TODO figure out why this isnt authenticated and fix it
-			//await discord.UpdateStatusAsync(new DiscordActivity { Name = "streaming development", ActivityType = ActivityType.Streaming, StreamUrl = "https://twitch.tv/not__nugget"}, UserStatus.Online);
+            await discord.ConnectAsync();
 
-			//TODO need to find a better way to return control without terminating an application, like potentially opening the bot in a new thread, but how does that effect async/await?
-			await Task.Delay(-1);
-		}
+            //TODO figure out why this isnt authenticated and fix it
+            //await discord.UpdateStatusAsync(new DiscordActivity { Name = "streaming development", ActivityType = ActivityType.Streaming, StreamUrl = "https://twitch.tv/not__nugget"}, UserStatus.Online);
 
-		//TODO this should be handled elsewhere
-		async Task OnGuildDownloadComplete(DiscordClient sender, GuildDownloadCompletedEventArgs e)
-		{
-			await AttemptRebuildVoiceRegisteredGuildDataAsync(sender);
-		}
+            //TODO need to find a better way to return control without terminating an application, like potentially opening the bot in a new thread, but how does that effect async/await?
+            await Task.Delay(-1);
+        }
 
-		async Task AttemptRebuildVoiceRegisteredGuildDataAsync(DiscordClient client)
-		{
-			string error;
-			if ((error = await guildDataReference.RebuildDeserializedDataFromClient(client)) == string.Empty)
-			{
-				client.Logger.Log(LogLevel.Information, "Data deserialized from disk");
-				return;
-			}
+        //TODO this should be handled elsewhere (i think)
+        async Task OnGuildDownloadComplete(DiscordClient sender, GuildDownloadCompletedEventArgs e)
+        {
+            string error;
+            if ((error = await guildDataReference.RebuildDeserializedDataFromClient(sender)) == string.Empty)
+            {
+                sender.Logger.Log(LogLevel.Information, "Data deserialized from disk");
+                return;
+            }
 
-			//log the error
-			client.Logger.Log(LogLevel.Error, error);
-		}
-	}
+            //log the error
+            sender.Logger.Log(LogLevel.Warning, error);
+        }
+    }
 }
