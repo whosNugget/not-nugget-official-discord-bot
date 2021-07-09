@@ -19,8 +19,8 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 	/// <summary>
 	/// This class holds references to DiscordGuilds and their subsequent data used by the bot's VC features. [NYI/NYT] This class can be directly serialized and deserialized
 	/// </summary>
-	[JsonDictionary]
-	public class RegisteredGuildData : ISerializable<RegisteredGuildData>, IDeserializable<RegisteredGuildData>
+	[JsonDictionary("registered_guilds")]
+	public class RegisteredGuildData : ISerializable
 	{
 		[JsonIgnore]
 		public Dictionary<DiscordGuild, GuildData> RegisteredGuilds { get; private set; } = new Dictionary<DiscordGuild, GuildData>();
@@ -28,10 +28,10 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 		[JsonIgnore]
 		public bool Rebuilding { get => rebuilding; }
 		[JsonIgnore]
-		volatile bool rebuilding = false;
+		private bool rebuilding = false;
 
 		[JsonProperty("guild_data")]
-		Dictionary<ulong, GuildDataSerializableContainer> serializableContainer = null;
+		private readonly Dictionary<ulong, GuildDataSerializableContainer> serializableContainer = null;
 
 		/// <summary>
 		/// Get the GuildData for the provided guild. Will return null instead of throw an exeption when any error occurs
@@ -183,50 +183,6 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 
 			rebuilding = false;
 			return error;
-		}
-
-		public SerializationResult Serialize(TextWriter writer, JsonSerializer serializer)
-		{
-			bool success = false;
-			string errorMessage = string.Empty;
-
-			serializableContainer = new Dictionary<ulong, GuildDataSerializableContainer>();
-			foreach (var kvp in RegisteredGuilds)
-			{
-				serializableContainer.Add(kvp.Key.Id, kvp.Value.CreateSerializableContainer());
-			}
-
-			try
-			{
-				serializer.Serialize(writer, serializableContainer);
-				success = true;
-			}
-			catch (Exception e)
-			{
-				errorMessage = e.Message;
-			}
-
-			serializableContainer = null;
-			
-			return new SerializationResult(success, errorMessage);
-		}
-
-		public DeserializationResult<RegisteredGuildData> Deserialize(TextReader reader, JsonSerializer serializer)
-		{
-			bool success = false;
-			string errorMesage = string.Empty;
-
-			try
-			{
-				serializableContainer = (Dictionary<ulong, GuildDataSerializableContainer>)serializer.Deserialize(reader, typeof(Dictionary<ulong, GuildDataSerializableContainer>));
-				success = true;
-			}
-			catch (Exception e)
-			{
-				errorMesage = e.Message;
-			}
-
-			return new DeserializationResult<RegisteredGuildData>(success, errorMesage, this);
 		}
 	}
 
@@ -543,6 +499,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 	}
 
 	//TODO own file
+	[JsonObject("guild_data_container")]
 	public class GuildDataSerializableContainer
 	{
 		[JsonProperty("parent_category")]

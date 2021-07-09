@@ -149,19 +149,17 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
         #endregion
         private async Task<bool> SerializeModifiedGuildData(CommandContext ctx, DiscordChannel loggingChannel)
         {
-            SerializationResult result = Serializer.Serialize("Data/Voice/GuildData/guild_data.json", registeredGuildData);
-
-            if (!result.Success)
+            if (!Serializer.Serialize(registeredGuildData, "Data/Voice/GuildData/guild_data.json", out string error))
             {
                 DiscordEmbedBuilder builder = GetDefaultEmbedBuilder(ctx, "Serialization Unsuccesful");
                 builder.WithDescription($"{nameof(VoiceHubModule)}.{nameof(SerializeModifiedGuildData)}: serialization of updated {nameof(RegisteredGuildData)} was unsuccessful")
-                       .AddField("Error", result.ErrorMessage)
+                       .AddField("Error", error)
                        .WithFooter("Serialization Error");
 
                 await loggingChannel.SendMessageAsync(builder.Build());
             }
 
-            return result.Success;
+            return error == string.Empty;
         }
         #endregion
         #region User Actions
