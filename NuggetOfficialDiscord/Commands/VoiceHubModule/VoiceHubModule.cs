@@ -25,7 +25,6 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
             this.registeredGuildData = registeredGuildData;
         }
 
-        #region Authoritive Actions
         #region Overrides
         public override async Task BeforeExecutionAsync(CommandContext ctx)
         {
@@ -37,6 +36,8 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
             await ctx.TriggerTypingAsync();
         }
         #endregion
+
+        #region Authoritive Actions
         #region Guild registration
         [Command("registerguild"), RequirePermissions(Permissions.Administrator)]
         public async Task RegisterGuild(CommandContext ctx, DiscordChannel parentCategory, DiscordChannel waitingRoomVC, DiscordChannel commandListenChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole)
@@ -44,8 +45,10 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
             await RegisterGuild(ctx, parentCategory, waitingRoomVC, commandListenChannel, null, memberRole, mutedRole, botManagerRole);
         }
         [Command("registerguild"), RequirePermissions(Permissions.Administrator)]
-        public async Task RegisterGuild(CommandContext ctx, DiscordChannel loggingChannel, DiscordChannel parentCategory, DiscordChannel waitingRoomVC, DiscordChannel commandListenChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole)
+        public async Task RegisterGuild(CommandContext ctx, DiscordChannel parentCategory, DiscordChannel waitingRoomVC, DiscordChannel commandListenChannel, DiscordChannel loggingChannel, DiscordRole memberRole, DiscordRole mutedRole, DiscordRole botManagerRole)
         {
+            //TODO Wizard-ify this maybe?
+
             DiscordEmbedBuilder builder = GetDefaultEmbedBuilder(ctx, "Register Guild");
 
             if (registeredGuildData.RegisterGuild(ctx.Guild, parentCategory, waitingRoomVC, commandListenChannel, loggingChannel, memberRole, mutedRole, botManagerRole, out string error))
@@ -94,15 +97,13 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
                            .AddField("Command Channel", commandListenChannel.Mention)
                            .AddField("Member Role", memberRole.Mention)
                            .AddField("Muted Role", memberRole.Mention)
-                           .AddField("Bot Manager Role", botManagerRole.Mention)
-                           .AddField("", "")
-                           .AddField("Default Everyone Permissions", everyoneAuthorization.ToString())
-                           .AddField("", "")
-                           .AddField("Default Rolewise Permissions", "You can use !permit to change these, or add more")
-                           .AddFields(rolewiseAuthorizations)
-                           .AddField("", "")
-                           .AddField("Default Memberwise Permissions", "You can use !permit to change these, or add more")
-                           .AddFields(memberwiseAuthorizations);
+                           .AddField("Bot Manager Role", botManagerRole.Mention);
+                           //TODO need to figure out a better way to display this information
+                           //.AddField("Default Everyone Permissions", everyoneAuthorization.ToString())
+                           //.AddField("Default Rolewise Permissions", "You can use !permit to change these, or add more")
+                           //.AddFields(rolewiseAuthorizations)
+                           //.AddField("Default Memberwise Permissions", "You can use !permit to change these, or add more")
+                           //.AddFields(memberwiseAuthorizations);
 
                     await ctx.Channel.SendMessageAsync(builder.Build());
 
@@ -122,7 +123,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
         [Command("permit")]
         public async Task Permit(CommandContext ctx, params DiscordRole[] roles)
         {
-            AlterPermissionsWizardResult result = await StartPermissionWizardForMemberOrRole(ctx, roles, null);
+            AlterPermissionsWizardResult result = await StartPermissionWizard(ctx, roles, null);
 
             //print the result and ask for validation
 
@@ -132,14 +133,14 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
         [Command("permit")]
         public async Task Permit(CommandContext ctx, params DiscordMember[] members)
         {
-            AlterPermissionsWizardResult result = await StartPermissionWizardForMemberOrRole(ctx, null, members);
+            AlterPermissionsWizardResult result = await StartPermissionWizard(ctx, null, members);
 
             //print the result and ask for validation
 
             //if validated, save and serialize the data
             //otherwise, save nothing and return
         }
-        private async Task<AlterPermissionsWizardResult> StartPermissionWizardForMemberOrRole(CommandContext ctx, DiscordRole[] roles, DiscordMember[] members)
+        private async Task<AlterPermissionsWizardResult> StartPermissionWizard(CommandContext ctx, DiscordRole[] roles, DiscordMember[] members)
         {
             AlterPermissionsWizard wizard = new AlterPermissionsWizard(ctx, roles, members);
             await wizard.SetupWizard();
