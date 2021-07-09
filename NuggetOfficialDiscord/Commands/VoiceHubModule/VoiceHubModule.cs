@@ -142,14 +142,14 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
         }
         private async Task<AlterPermissionsWizardResult> StartPermissionWizard(CommandContext ctx, DiscordRole[] roles, DiscordMember[] members)
         {
-            AlterPermissionsWizard wizard = new AlterPermissionsWizard(ctx, roles, members);
+            AlterPermissionsWizard wizard = new(ctx, roles, members);
             await wizard.SetupWizard();
             return await wizard.GetResult();
         }
         #endregion
         private async Task<bool> SerializeModifiedGuildData(CommandContext ctx, DiscordChannel loggingChannel)
         {
-            if (!Serializer.Serialize(registeredGuildData, "Data/Voice/GuildData/guild_data.json", out string error))
+            if (!registeredGuildData.Serialize("Data/Voice/GuildData/guild_data.json", out string error))
             {
                 DiscordEmbedBuilder builder = GetDefaultEmbedBuilder(ctx, "Serialization Unsuccesful");
                 builder.WithDescription($"{nameof(VoiceHubModule)}.{nameof(SerializeModifiedGuildData)}: serialization of updated {nameof(RegisteredGuildData)} was unsuccessful")
