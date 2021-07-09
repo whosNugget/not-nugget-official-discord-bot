@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace NuggetOfficial.Discord.Data.Converters
 {
-	public class PermitDenyStringToBoolConverter : IArgumentConverter<bool>
+	public class PermitDenyStringConverter : IArgumentConverter<bool>
 	{
 		public async Task<Optional<bool>> ConvertAsync(string value, CommandContext ctx)
 		{

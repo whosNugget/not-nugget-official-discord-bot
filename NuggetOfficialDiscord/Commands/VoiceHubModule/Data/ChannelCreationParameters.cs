@@ -2,7 +2,7 @@
 using DSharpPlus.Entities;
 using System.Collections.Generic;
 
-namespace NuggetOfficial.Discord.Data.VoiceModule
+namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data
 {
 	/// <summary>
 	/// Structure containing all parameters used for creating or editing channels, as well as some commonly useful metadata. Create instances of this structure using the initialization syntax
@@ -19,7 +19,7 @@ namespace NuggetOfficial.Discord.Data.VoiceModule
 		public int? Bitrate { get; set; }
 		public int? UserLimit { get; set; }
 		public IEnumerable<DiscordOverwrite> PermissionOverwrites { get; set; }
-		public ChannelPublicity Publicity { get; set; }
+		public ChannelAccessibility Publicity { get; set; }
 		public VoiceRegion? RequestedRegion { get; set; }
 		public VideoQualityMode? VideoQuality { get; set; }
 		public string AuditLogReason { get; set; }
