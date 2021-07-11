@@ -40,7 +40,6 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
 		#endregion
 
 		#region Overrides
-
         public override async Task SetupWizard()
         {
             if (authorities == ChannelAuthorities.CompletelyUnauthorized || !authorities.HasFlag(ChannelAuthorities.CanCreateChannels))
@@ -54,7 +53,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
             DiscordEmbedBuilder builder = new DiscordEmbedBuilder().WithTitle("Channel creation wizard").WithThumbnail(context.Member.DefaultAvatarUrl);
             interactionMessage = await context.Message.RespondAsync(builder.Build());
 
-            wizardSteps.AddRange(CreateWizardSteps());
+            CreateWizardSteps();
         }
 
         public override async Task<CreateChannelWizardResult> GetResult()
@@ -73,44 +72,42 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
 
 		protected override void InitializeEmojiContainer()
 		{
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":unlock:", false), ChannelAccessibility.Public);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":closed_lock_with_key:", false), ChannelAccessibility.Private);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":lock_with_ink_pen:", false), ChannelAccessibility.Hidden);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":gem:", false), ChannelAccessibility.Supporter);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, channelPublicity[0], false), ChannelAccessibility.Public);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, channelPublicity[1], false), ChannelAccessibility.Private);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, channelPublicity[2], false), ChannelAccessibility.Hidden);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, channelPublicity[3], false), ChannelAccessibility.Supporter);
             
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_br:", false), VoiceRegion.Brazil);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_eu:", false), VoiceRegion.Europe);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_hk:", false), VoiceRegion.HongKong);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_in:", false), VoiceRegion.India);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_ru:", false), VoiceRegion.Russia);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_sg:", false), VoiceRegion.Singapore);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_za:", false), VoiceRegion.SouthAfrica);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_au:", false), VoiceRegion.Sydney);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":flag_us:", false), VoiceRegion.US);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":arrow_up:", false), VoiceRegion.USCentral);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":arrow_right:", false), VoiceRegion.USEast);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":arrow_down:", false), VoiceRegion.USSouth);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":arrow_left:", false), VoiceRegion.USWest);
-            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, ":green_square:", false), VoiceRegion.USWest);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, regionList[0], false), VoiceRegion.Brazil);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, regionList[1], false), VoiceRegion.Europe);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, regionList[2], false), VoiceRegion.HongKong);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, regionList[3], false), VoiceRegion.India);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, regionList[4], false), VoiceRegion.Russia);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, regionList[5], false), VoiceRegion.Singapore);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, regionList[6], false), VoiceRegion.SouthAfrica);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, regionList[7], false), VoiceRegion.Sydney);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, regionList[8], false), VoiceRegion.US);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, usaSubregionList[0], false), VoiceRegion.USCentral);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, usaSubregionList[1], false), VoiceRegion.USEast);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, usaSubregionList[2], false), VoiceRegion.USSouth);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, usaSubregionList[3], false), VoiceRegion.USWest);
+            reactionEmotes.SetEmojiValue(DiscordEmoji.FromName(context.Client, regionList[9], false), VoiceRegion.USWest);
 		}
         
-        protected override IEnumerable<Func<Task>> CreateWizardSteps()
+        protected override void CreateWizardSteps()
         {
-            List<Func<Task>> taskSteps = new List<Func<Task>>();
-            if (authorities.HasFlag(ChannelAuthorities.CanRenameChannels)) taskSteps.Add(AwaitRenameInteraction);
+            if (authorities.HasFlag(ChannelAuthorities.CanRenameChannels)) wizardSteps.Add(AwaitRenameInteraction);
             if (authorities.HasFlag(ChannelAuthorities.CanCreatePrivateChannels)
                 || authorities.HasFlag(ChannelAuthorities.CanCreateSupporterChannels)
                 || authorities.HasFlag(ChannelAuthorities.CanCreateHiddenChannels))
-                taskSteps.Add(AwaitAccesibilityInteraction);
-            if (authorities.HasFlag(ChannelAuthorities.CanCreateLimitedChannels)) taskSteps.Add(AwaitLimitedInteraction);
-            if (authorities.HasFlag(ChannelAuthorities.CanModifyChannelBitrate)) taskSteps.Add(AwaitBitrateInteraction);
-            if (authorities.HasFlag(ChannelAuthorities.CanModifyChannelRegion)) taskSteps.Add(AwaitRegionInteraction);
-            return taskSteps;
+                wizardSteps.Add(AwaitAccesibilityInteraction);
+            if (authorities.HasFlag(ChannelAuthorities.CanCreateLimitedChannels)) wizardSteps.Add(AwaitLimitedInteraction);
+            if (authorities.HasFlag(ChannelAuthorities.CanModifyChannelBitrate)) wizardSteps.Add(AwaitBitrateInteraction);
+            if (authorities.HasFlag(ChannelAuthorities.CanModifyChannelRegion)) wizardSteps.Add(AwaitRegionInteraction);
         }
 
         protected override async Task PreStep()
         {
-            await interactionMessage?.DeleteAllReactionsAsync("Creation wizard step advancement - Clear previous emojis - PreTask()");
+            await interactionMessage?.DeleteAllReactionsAsync("Creation wizard step advancement - Clear previous emojis");
         }
 
         protected override async Task PostStep()
@@ -191,9 +188,15 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
         {
             await interactionMessage.ModifyAsync(GetBuilder("Channel creation wizard - Unknown error", "An unknown error has occurred. Please try again. If this keeps occuring, reach out to a server admin", DiscordColor.Red, "Error: Unknown").Build());
         }
+
+        //TODO remove or make better...theres no reason not to use a default builder list. Either way there's gonna be a repition of code
+        private DiscordEmbedBuilder GetBuilder(string title, string description, DiscordColor color, string footer)
+        {
+            return new DiscordEmbedBuilder().WithTitle(title).WithDescription(description).WithColor(color).WithFooter(footer).WithThumbnail(context.Guild.IconUrl);
+        }
         #endregion
 
-        #region Wizard Task Steps
+        #region Wizard Steps
         private async Task AwaitRenameInteraction()
         {
             await interactionMessage.ModifyAsync(GetBuilder("Channel creation wizard - Channel Rename", $"{context.Member.Mention}: Do you want to reaname the channel?", DiscordColor.Blue, "Wizard rename step").Build());
@@ -379,11 +382,5 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
             this.result.ChannelVoiceRegion = GetVoiceRegionFromEmoji(result.Result.Emoji);
         }
         #endregion
-
-        //TODO remove or make better...theres no reason not to use a default builder list. Either way there's gonna be a repition of code
-        private DiscordEmbedBuilder GetBuilder(string title, string description, DiscordColor color, string footer)
-        {
-            return new DiscordEmbedBuilder().WithTitle(title).WithDescription(description).WithColor(color).WithFooter(footer).WithThumbnail(context.Guild.IconUrl);
-        }
     }
 }

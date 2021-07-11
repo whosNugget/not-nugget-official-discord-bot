@@ -9,8 +9,10 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data.Permissions
     [JsonObject]
     public class ChannelAuthorizations
     {
-        public static ChannelAuthorizations Authorized => new ChannelAuthorizations(ChannelAuthorities.CompletelyAuthorized);
-        public static ChannelAuthorizations Unauthorized => new ChannelAuthorizations(ChannelAuthorities.CompletelyUnauthorized);
+        [JsonIgnore]
+        public static ChannelAuthorizations Authorized => new(ChannelAuthorities.CompletelyAuthorized);
+        [JsonIgnore]
+        public static ChannelAuthorizations Unauthorized => new(ChannelAuthorities.CompletelyUnauthorized);
 
         [JsonProperty("authorities")]
         public ChannelAuthorities Authorities { get; private set; }
@@ -30,7 +32,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data.Permissions
 
         public bool VerifyAuthority(ChannelCreationParameters parameters, out string[] errors)
         {
-            List<string> errorsList = new List<string>();
+            List<string> errorsList = new();
 
             if (!Authorities.HasFlag(ChannelAuthorities.CanCreateChannels))
             {
@@ -68,7 +70,6 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data.Permissions
                 errorsList.Add("member does not have the authority to modify the channel's bitrate");
                 goto BitrateCheckComplete;
             }
-
         BitrateCheckComplete:
 
             switch (parameters.Publicity)

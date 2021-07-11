@@ -44,7 +44,7 @@ namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard
 		public virtual async Task<T> GetResult() => await Task.FromResult(result);
 		
 		protected abstract void InitializeEmojiContainer();
-		protected abstract IEnumerable<Func<Task>> CreateWizardSteps();
+		protected abstract void CreateWizardSteps();
 
 		protected virtual Task PreStep() => Task.CompletedTask;
 		protected virtual Task PostStep() => Task.CompletedTask;

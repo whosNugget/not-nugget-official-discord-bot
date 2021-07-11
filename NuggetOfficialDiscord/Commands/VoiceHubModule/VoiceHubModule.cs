@@ -8,9 +8,9 @@ using NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard;
 using NuggetOfficial.Discord.Serialization;
 using NuggetOfficialDiscord.Commands.VoiceHubModule.Data;
 using NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard;
-using NuggetOfficialDiscord.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -98,12 +98,12 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
                            .AddField("Member Role", memberRole.Mention)
                            .AddField("Muted Role", memberRole.Mention)
                            .AddField("Bot Manager Role", botManagerRole.Mention);
-                           //TODO need to figure out a better way to display this information
-                           //.AddField("Default Everyone Permissions", everyoneAuthorization.ToString())
-                           //.AddField("Default Rolewise Permissions", "You can use !permit to change these, or add more")
-                           //.AddFields(rolewiseAuthorizations)
-                           //.AddField("Default Memberwise Permissions", "You can use !permit to change these, or add more")
-                           //.AddFields(memberwiseAuthorizations);
+                    //TODO need to figure out a better way to display this information
+                    //.AddField("Default Everyone Permissions", everyoneAuthorization.ToString())
+                    //.AddField("Default Rolewise Permissions", "You can use !permit to change these, or add more")
+                    //.AddFields(rolewiseAuthorizations)
+                    //.AddField("Default Memberwise Permissions", "You can use !permit to change these, or add more")
+                    //.AddFields(memberwiseAuthorizations);
 
                     await ctx.Channel.SendMessageAsync(builder.Build());
 
@@ -123,28 +123,129 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
         [Command("permit")]
         public async Task Permit(CommandContext ctx, params DiscordRole[] roles)
         {
-            AlterPermissionsWizardResult result = await StartPermissionWizard(ctx, roles, null);
+            DiscordEmbedBuilder builder = GetDefaultEmbedBuilder(ctx, "Authorization Permittance Result");
 
-            //print the result and ask for validation
+            PermissionsWizardResult result = await StartPermissionWizard(ctx, roles, null);
 
-            //if validated, save and serialize the data
-            //otherwise, save nothing and return
+            if (result.Valid)
+            {
+                Dictionary<DiscordRole, ChannelAuthorizations> rolewizeAuthorizationUpdates = ArrayToSingleValueDictionary(roles, result.Authorizations);
+
+                if (registeredGuildData.UpdateGuildPermissions(ctx.Guild, null, rolewizeAuthorizationUpdates, null, out string error))
+                {
+                    if (await SerializeModifiedGuildData(ctx, ctx.Channel))
+                    {
+                        StringBuilder roleString = new("Adding authorizations for:\n");
+                        StringBuilder authorityString = new();
+                        ChannelAuthorities authorities = result.Authorizations.Authorities;
+                        ChannelAuthorities[] values = Enum.GetValues<ChannelAuthorities>();
+
+                        for (int i = 0; i < roles.Length; i++)
+                            roleString.Append($"{roles[i].Mention}{(i + 1 == roles.Length ? "" : ", ")}");
+
+                        for (int i = 0; i < values.Length; i++)
+                            authorityString.Append($"{values[i]}: {authorities.HasFlag(values[i])}{(i + 1 == values.Length ? "" : "\n")}");
+
+                        builder.WithDescription(roleString.ToString())
+                               .AddField("Authority outline:", authorityString.ToString());
+                    }
+
+                    builder.WithColor(DiscordColor.Red)
+                           .WithFooter("Serialization Error")
+                           .WithDescription("Could not serialize the updated authorization data")
+                           .AddField("Error", error);
+
+                    await ctx.Channel.SendMessageAsync(builder.Build());
+                    return;
+                }
+
+                builder.WithColor(DiscordColor.Red)
+                   .WithFooter("Command Error")
+                   .WithDescription("Guild not registered. Be sure to use ``!registerguild`` before calling any other voice-hub commands")
+                   .AddField("Error", error);
+
+                await ctx.Message.RespondAsync(builder.Build());
+                return;
+            }
+
+            builder.WithColor(DiscordColor.Red)
+                   .WithFooter("Command Error")
+                   .WithDescription("Could not add the authorizations to the provided roles")
+                   .AddField("Error", result.ErrorString);
+
+            await ctx.Message.RespondAsync(builder.Build());
         }
         [Command("permit")]
-        public async Task Permit(CommandContext ctx, params DiscordMember[] members)
+        public async Task Permit(CommandContext ctx, params DiscordMember[] members) //TODO this and the above method are effectively identical...figure out a solution to move all this logic into a single method and choose the right logic based on the input
         {
-            AlterPermissionsWizardResult result = await StartPermissionWizard(ctx, null, members);
+            DiscordEmbedBuilder builder = GetDefaultEmbedBuilder(ctx, "Authorization Permittance Result");
 
-            //print the result and ask for validation
+            PermissionsWizardResult result = await StartPermissionWizard(ctx, null, members);
 
-            //if validated, save and serialize the data
-            //otherwise, save nothing and return
+            if (result.Valid)
+            {
+                Dictionary<DiscordMember, ChannelAuthorizations> memberwiseAuthorizationUpdates = ArrayToSingleValueDictionary(members, result.Authorizations);
+
+                if (registeredGuildData.UpdateGuildPermissions(ctx.Guild, null, null, memberwiseAuthorizationUpdates, out string error))
+                {
+                    if (await SerializeModifiedGuildData(ctx, ctx.Channel))
+                    {
+                        StringBuilder roleString = new("Adding authorizations for:\n");
+                        StringBuilder authorityString = new();
+                        ChannelAuthorities authorities = result.Authorizations.Authorities;
+                        ChannelAuthorities[] values = Enum.GetValues<ChannelAuthorities>();
+
+                        for (int i = 0; i < members.Length; i++)
+                            roleString.Append($"{members[i].Mention}{(i + 1 == members.Length ? "" : ", ")}");
+
+                        for (int i = 0; i < values.Length; i++)
+                            authorityString.Append($"{values[i]}: {authorities.HasFlag(values[i])}{(i + 1 == values.Length ? "" : "\n")}");
+
+                        builder.WithDescription(roleString.ToString())
+                               .AddField("Authority outline:", authorityString.ToString());
+                    }
+
+                    builder.WithColor(DiscordColor.Red)
+                           .WithFooter("Serialization Error")
+                           .WithDescription("Could not serialize the updated authorization data")
+                           .AddField("Error", error);
+
+                    await ctx.Channel.SendMessageAsync(builder.Build());
+                    return;
+                }
+
+                builder.WithColor(DiscordColor.Red)
+                   .WithFooter("Command Error")
+                   .WithDescription("Guild not registered. Be sure to use ``!registerguild`` before calling any other voice-hub commands")
+                   .AddField("Error", error);
+
+                await ctx.Message.RespondAsync(builder.Build());
+                return;
+            }
+
+            builder.WithColor(DiscordColor.Red)
+                   .WithFooter("Command Error")
+                   .WithDescription("Could not add the authorizations to the provided roles")
+                   .AddField("Error", result.ErrorString);
+
+            await ctx.Message.RespondAsync(builder.Build());
         }
-        private async Task<AlterPermissionsWizardResult> StartPermissionWizard(CommandContext ctx, DiscordRole[] roles, DiscordMember[] members)
+        private static async Task<PermissionsWizardResult> StartPermissionWizard(CommandContext ctx, DiscordRole[] roles, DiscordMember[] members)
         {
-            AlterPermissionsWizard wizard = new(ctx, roles, members);
+            PermissionsWizard wizard = new(ctx, roles, members);
             await wizard.SetupWizard();
             return await wizard.GetResult();
+        }
+        private static Dictionary<TKey, TValue> ArrayToSingleValueDictionary<TKey, TValue>(TKey[] keys, TValue value)
+        {
+            Dictionary<TKey, TValue> result = new();
+
+            foreach (var key in keys)
+            {
+                result.Add(key, value);
+            }
+
+            return result;
         }
         #endregion
         private async Task<bool> SerializeModifiedGuildData(CommandContext ctx, DiscordChannel loggingChannel)
@@ -348,7 +449,7 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule
         #endregion
 
         #region Synchronous Private Methods
-        private DiscordEmbedBuilder GetDefaultEmbedBuilder(CommandContext ctx, string title)
+        private static DiscordEmbedBuilder GetDefaultEmbedBuilder(CommandContext ctx, string title)
         {
             return new DiscordEmbedBuilder().WithTitle(title).WithAuthor(ctx.Client.CurrentUser.Username, null, ctx.Client.CurrentUser.AvatarUrl).WithThumbnail(ctx.Guild.IconUrl);
         }
