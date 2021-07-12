@@ -23,17 +23,22 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
         private static readonly string[] usaSubregionList = { ":arrow_up:", ":arrow_right:", ":arrow_down:", ":arrow_left:" };
 
 		private readonly ChannelAuthorities authorities;
+        private readonly DiscordEmbedBuilder cachedBuilder;
 		#endregion
 
 		#region Constructors
-		//TODO see if it is possible to remove this duplicated code
+		//TODO see if it is possible to remove this duplicated 
 		public CreateChannelWizard(CommandContext context, GuildData guildData) : base(context)
         {
+            cachedBuilder = new DiscordEmbedBuilder();
+
             authorities = guildData.GetMemberPermissions(context.Member).Authorities;
             if (!emojiPopulated) InitializeEmojiContainer();
         }
         public CreateChannelWizard(CommandContext context, DiscordChannel channel, GuildData guildData) : base(context, channel)
 		{
+            cachedBuilder = new DiscordEmbedBuilder();
+
             authorities = guildData.GetMemberPermissions(context.Member).Authorities;
             if (!emojiPopulated) InitializeEmojiContainer();
         }
@@ -50,10 +55,10 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
                 return;
             }
 
-            DiscordEmbedBuilder builder = new DiscordEmbedBuilder().WithTitle("Channel creation wizard").WithThumbnail(context.Member.DefaultAvatarUrl);
-            interactionMessage = await context.Message.RespondAsync(builder.Build());
-
             CreateWizardSteps();
+
+            cachedBuilder.WithTitle("Channel creation wizard").WithThumbnail(context.Member.DefaultAvatarUrl);
+            interactionMessage = await context.Message.RespondAsync(cachedBuilder.Build());
         }
 
         public override async Task<CreateChannelWizardResult> GetResult()
@@ -189,10 +194,13 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Wizard
             await interactionMessage.ModifyAsync(GetBuilder("Channel creation wizard - Unknown error", "An unknown error has occurred. Please try again. If this keeps occuring, reach out to a server admin", DiscordColor.Red, "Error: Unknown").Build());
         }
 
-        //TODO remove or make better...theres no reason not to use a default builder list. Either way there's gonna be a repition of code
         private DiscordEmbedBuilder GetBuilder(string title, string description, DiscordColor color, string footer)
         {
-            return new DiscordEmbedBuilder().WithTitle(title).WithDescription(description).WithColor(color).WithFooter(footer).WithThumbnail(context.Guild.IconUrl);
+            return cachedBuilder.ClearFields()
+                                .WithTitle(title)
+                                .WithDescription(description)
+                                .WithColor(color)
+                                .WithFooter(footer);
         }
         #endregion
 

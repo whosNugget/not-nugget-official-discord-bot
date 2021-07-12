@@ -104,6 +104,15 @@ namespace NuggetOfficial.Discord.Commands.VoiceHubModule.Data.Permissions
             return (errors = errorsList.ToArray()).Length == 0;
         }
 
+        public void AddAuthority(ChannelAuthorities authorities)
+        {
+            Authorities |= authorities;
+        }
+        public void RemoveAuthority(ChannelAuthorities authorities)
+        {
+            //TODO
+        }
+
         public override string ToString()
         {
             return $"Authorizations: {Authorities}";

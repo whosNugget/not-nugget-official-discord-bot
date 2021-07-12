@@ -1,7 +1,11 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Extensions;
 using NuggetOfficial.Discord.Commands.VoiceHubModule.Data.Permissions;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard
@@ -9,18 +13,29 @@ namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard
     public class PermissionsWizard : EmbedInteractionWizard<PermissionsWizardResult>
     {
         #region Private Variables
+        private static string[] createRenameReactions = new[] { ":eight_spoked_asterisk:", ":abcd:" };
+        private static string[] createQuantityReactions = new[] { ":one:", ":1234:", ":infinity:" };
+        private static string[] createAccessibilityReactions = new[] { ":lock:", ":unlock:", ":lock_with_ink_pen:", ":gem:" };
+
         private readonly DiscordRole[] roles;
         private readonly DiscordMember[] members;
+
+        private readonly DiscordEmbedBuilder cachedBuilder;
+        private bool complete = false;
         #endregion
 
         #region Constructors
         public PermissionsWizard(CommandContext context, DiscordRole[] roles, DiscordMember[] members) : base(context)
         {
+            cachedBuilder = new DiscordEmbedBuilder();
+
             this.roles = roles;
             this.members = members;
         }
         public PermissionsWizard(CommandContext context, DiscordChannel responseChannel, DiscordRole[] roles, DiscordMember[] members) : base(context, responseChannel)
         {
+            cachedBuilder = new DiscordEmbedBuilder();
+
             this.roles = roles;
             this.members = members;
         }
@@ -31,6 +46,9 @@ namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard
         {
             DiscordEmbedBuilder builder = new DiscordEmbedBuilder().WithTitle("Permissions wizard").WithThumbnail(context.Member.DefaultAvatarUrl);
             interactionMessage = await context.Message.RespondAsync(builder.Build());
+
+            result = new();
+            result.Authorizations = ChannelAuthorizations.Unauthorized;
 
             CreateWizardSteps();
         }
@@ -44,7 +62,7 @@ namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard
                 await wizardSteps[stepIndex]();
                 await PostStep();
             }
-            while (result.Valid && ++stepIndex < wizardSteps.Count);
+            while (!complete && result.Valid && ++stepIndex < wizardSteps.Count);
 
             return await Task.FromResult(result);
         }
@@ -83,6 +101,32 @@ namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard
         #endregion
 
         #region Private Helpers
+        private bool CheckResultCancelled(InteractivityResult<MessageReactionAddEventArgs> result)
+        {
+            bool cancelled;
+
+            if (cancelled = result.Result.Emoji.Equals(reactionEmotes.Cancel))
+            {
+                this.result.Valid = false;
+                this.result.InvalidationReason = WizardInvalidationReason.Cancelled;
+                this.result.ErrorString = "The request was cancelled by the user";
+            }
+
+            return cancelled;
+        }
+
+        private bool CheckResultTimedOut<T>(InteractivityResult<T> result)
+        {
+            if (result.TimedOut)
+            {
+                this.result.Valid = false;
+                this.result.InvalidationReason = WizardInvalidationReason.TimedOut;
+                this.result.ErrorString = "The request timed out";
+            }
+
+            return result.TimedOut;
+        }
+
         private async Task WizardCancelledResponse()
         {
             await interactionMessage.ModifyAsync(GetBuilder("Permissions wizard - Cancelled", $"{context.Member.Mention} cancelled the wizard", DiscordColor.Red, "Error: Wizard cancelled").Build());
@@ -108,16 +152,55 @@ namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard
         #region WizardSteps
         private async Task AwaitCreateRenameReactions()
         {
+            await interactionMessage.ModifyAsync(GetBuilder("Permissions wizard - Rename", "Should these members or roles be allowed to rename the channels they create?", DiscordColor.Blue, "Permission Wizard Rename Step").Build());
 
+            await interactionMessage.CreateReactionAsync(reactionEmotes[createRenameReactions[0]]);
+            await interactionMessage.CreateReactionAsync(reactionEmotes[createRenameReactions[1]]);
+            await interactionMessage.CreateReactionAsync(reactionEmotes.Yes);
+            await interactionMessage.CreateReactionAsync(reactionEmotes.Cancel);
+
+            List<DiscordEmoji> reactions = new();
+            InteractivityResult<MessageReactionAddEventArgs> result;
+            do
+            {
+                result = await interactionMessage.WaitForReactionAsync(context.User);
+                if (CheckResultTimedOut(result) || CheckResultCancelled(result)) return;
+
+                reactions.Add(result.Result.Emoji);
+            } while (!result.Result.Emoji.Equals(reactionEmotes.Yes));
+
+            if (!reactions.Contains(reactionEmotes[createRenameReactions[0]]))
+            {
+                this.result.Authorizations = ChannelAuthorizations.Unauthorized;
+                complete = true;
+            }
+
+            reactionEmotes.GetEmojiValue(result.Result.Emoji, out ChannelAuthorities authorities);
+            this.result.Authorizations.AddAuthority(authorities);
         }
 
         private async Task AwaitCreationQuantityReaction()
         {
+            await interactionMessage.ModifyAsync(GetBuilder("Permissions wizard - Quantity", "How many channels should these members be allowed to create?", DiscordColor.Blue, "Permission Wizard Rename Step").Build());
 
+            await interactionMessage.CreateReactionAsync(reactionEmotes.Cancel);
+            await interactionMessage.CreateReactionAsync(reactionEmotes[createQuantityReactions[0]]);
+            await interactionMessage.CreateReactionAsync(reactionEmotes[createQuantityReactions[1]]);
+            await interactionMessage.CreateReactionAsync(reactionEmotes[createQuantityReactions[2]]);
+
+            var result = await interactionMessage.WaitForReactionAsync(context.User);
+            if (CheckResultTimedOut(result) || CheckResultCancelled(result)) return;
+
+            reactionEmotes.GetEmojiValue(result.Result.Emoji, out ChannelAuthorities authority);
+            this.result.Authorizations.AddAuthority(authority);
+
+            if (authority == ChannelAuthorities.CanCreateMultipleChannels)
+            await AwaitCreationQuantityMessage();
         }
 
         private async Task AwaitCreationQuantityMessage()
         {
+            await interactionMessage.ModifyAsync(GetBuilder("Permissions wizard - Rename", "Should these members or roles be allowed to rename the channels they create?", DiscordColor.Blue, "Permission Wizard Rename Step").Build());
 
         }
 
