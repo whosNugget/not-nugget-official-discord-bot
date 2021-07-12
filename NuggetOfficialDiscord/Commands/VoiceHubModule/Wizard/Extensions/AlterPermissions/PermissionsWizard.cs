@@ -2,8 +2,6 @@
 using DSharpPlus.Entities;
 using NuggetOfficial.Discord.Commands.VoiceHubModule.Data.Permissions;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace NuggetOfficialDiscord.Commands.VoiceHubModule.Wizard
